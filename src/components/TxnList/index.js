@@ -184,57 +184,36 @@ function TxnList({ transactions, symbol0Override, symbol1Override, color }) {
   useEffect(() => {
     if (transactions && transactions.mints && transactions.burns && transactions.swaps) {
       let newTxns = []
-      if (transactions.mints.length > 0) {
-        transactions.mints.map((mint) => {
-          let newTxn = {}
-          newTxn.hash = mint.transaction.id
-          newTxn.timestamp = mint.transaction.timestamp
-          newTxn.type = TXN_TYPE.ADD
-          newTxn.token0Amount = mint.amount0
-          newTxn.token1Amount = mint.amount1
-          newTxn.account = mint.to
-          newTxn.token0Symbol = updateNameData(mint.pair).token0.symbol
-          newTxn.token1Symbol = updateNameData(mint.pair).token1.symbol
-          newTxn.amountUSD = mint.amountUSD
-          return newTxns.push(newTxn)
-        })
-      }
-      if (transactions.burns.length > 0) {
-        transactions.burns.map((burn) => {
-          let newTxn = {}
-          newTxn.hash = burn.transaction.id
-          newTxn.timestamp = burn.transaction.timestamp
-          newTxn.type = TXN_TYPE.REMOVE
-          newTxn.token0Amount = burn.amount0
-          newTxn.token1Amount = burn.amount1
-          newTxn.account = burn.sender
-          newTxn.token0Symbol = updateNameData(burn.pair).token0.symbol
-          newTxn.token1Symbol = updateNameData(burn.pair).token1.symbol
-          newTxn.amountUSD = burn.amountUSD
-          return newTxns.push(newTxn)
-        })
-      }
+      
       if (transactions.swaps.length > 0) {
         transactions.swaps.map((swap) => {
-          const netToken0 = swap.amount0In - swap.amount0Out
-          const netToken1 = swap.amount1In - swap.amount1Out
+          const netToken0 = Number(swap.amount0In) - Number(swap.amount0Out)
+          const netToken1 = Number(swap.amount1In) - Number(swap.amount1Out)
 
+          if(swap.hash == '0x7f0d58b6f67ed2cd0dfcda4c4bf8f32d9055b15b2d4ed817fa7a2f01e1d5ee33') {
+            let stop = 1
+          }
+        
           let newTxn = {}
 
           if (netToken0 < 0) {
-            newTxn.token0Symbol = updateNameData(swap.pair).token0.symbol
-            newTxn.token1Symbol = updateNameData(swap.pair).token1.symbol
+            newTxn.token0Symbol = swap.token0Symbol
+            newTxn.token1Symbol = swap.token1Symbol
             newTxn.token0Amount = Math.abs(netToken0)
             newTxn.token1Amount = Math.abs(netToken1)
-          } else if (netToken1 < 0) {
-            newTxn.token0Symbol = updateNameData(swap.pair).token1.symbol
-            newTxn.token1Symbol = updateNameData(swap.pair).token0.symbol
+          }
+            else if (netToken1 < 0) {
+            newTxn.token0Symbol = swap.token1Symbol
+            newTxn.token1Symbol = swap.token0Symbol
             newTxn.token0Amount = Math.abs(netToken1)
             newTxn.token1Amount = Math.abs(netToken0)
+         }
+          else{
+            return
           }
 
-          newTxn.hash = swap.transaction.id
-          newTxn.timestamp = swap.transaction.timestamp
+          newTxn.hash = swap.hash
+          newTxn.timestamp = swap.timeStamp
           newTxn.type = TXN_TYPE.SWAP
 
           newTxn.amountUSD = swap.amountUSD
@@ -304,7 +283,7 @@ function TxnList({ transactions, symbol0Override, symbol1Override, color }) {
         )}
         {!below1080 && (
           <DataText area="account">
-            <Link color={color} external href={'https://etherscan.io/address/' + item.account}>
+            <Link color={color} external href={'https://ftmscan.com/address/' + item.account}>
               {item.account && item.account.slice(0, 6) + '...' + item.account.slice(38, 42)}
             </Link>
           </DataText>
@@ -330,30 +309,6 @@ function TxnList({ transactions, symbol0Override, symbol1Override, color }) {
               active={txFilter === TXN_TYPE.ALL}
             >
               All
-            </SortText>
-            <SortText
-              onClick={() => {
-                setTxFilter(TXN_TYPE.SWAP)
-              }}
-              active={txFilter === TXN_TYPE.SWAP}
-            >
-              Swaps
-            </SortText>
-            <SortText
-              onClick={() => {
-                setTxFilter(TXN_TYPE.ADD)
-              }}
-              active={txFilter === TXN_TYPE.ADD}
-            >
-              Adds
-            </SortText>
-            <SortText
-              onClick={() => {
-                setTxFilter(TXN_TYPE.REMOVE)
-              }}
-              active={txFilter === TXN_TYPE.REMOVE}
-            >
-              Removes
             </SortText>
           </RowFixed>
         )}

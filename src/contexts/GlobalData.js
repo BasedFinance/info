@@ -1,147 +1,151 @@
-import React, { createContext, useContext, useReducer, useMemo, useCallback, useEffect, useState } from 'react'
-import { client } from '../apollo/client'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import { useTimeframe } from './Application'
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useMemo,
+  useCallback,
+  useEffect,
+  useState
+} from "react";
+import {  testClient } from "../apollo/client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { BigNumber } from "ethers/utils";
+
+import { useTimeframe } from "./Application";
 import {
-  getPercentChange,
-  getBlockFromTimestamp,
-  getBlocksFromTimestamps,
-  get2DayPercentChange,
-  getTimeframe,
-} from '../utils'
+  getTimeframe
+} from "../utils";
 import {
-  GLOBAL_DATA,
-  GLOBAL_TXNS,
-  GLOBAL_CHART,
-  ETH_PRICE,
-  ALL_PAIRS,
-  ALL_TOKENS,
-  TOP_LPS_PER_PAIRS,
-} from '../apollo/queries'
-import weekOfYear from 'dayjs/plugin/weekOfYear'
-import { useAllPairData } from './PairData'
-import { useTokenChartDataCombined } from './TokenData'
-const UPDATE = 'UPDATE'
-const UPDATE_TXNS = 'UPDATE_TXNS'
-const UPDATE_CHART = 'UPDATE_CHART'
-const UPDATE_ETH_PRICE = 'UPDATE_ETH_PRICE'
-const ETH_PRICE_KEY = 'ETH_PRICE_KEY'
-const UPDATE_ALL_PAIRS_IN_UNISWAP = 'UPDAUPDATE_ALL_PAIRS_IN_UNISWAPTE_TOP_PAIRS'
-const UPDATE_ALL_TOKENS_IN_UNISWAP = 'UPDATE_ALL_TOKENS_IN_UNISWAP'
-const UPDATE_TOP_LPS = 'UPDATE_TOP_LPS'
+  GLOBAL_TXNS_BASED,
+  VOLUMES_DATA_BY_DATE
+} from "../apollo/queries";
+import weekOfYear from "dayjs/plugin/weekOfYear";
+import { useAllPairData } from "./PairData";
+import { useTokenChartDataCombined } from "./TokenData";
+import { ethers } from "ethers";
+
+const UPDATE = "UPDATE";
+const UPDATE_TXNS = "UPDATE_TXNS";
+const UPDATE_CHART = "UPDATE_CHART";
+const UPDATE_ETH_PRICE = "UPDATE_ETH_PRICE";
+const ETH_PRICE_KEY = "ETH_PRICE_KEY";
+const UPDATE_ALL_PAIRS_IN_UNISWAP = "UPDAUPDATE_ALL_PAIRS_IN_UNISWAPTE_TOP_PAIRS";
+const UPDATE_ALL_TOKENS_IN_UNISWAP = "UPDATE_ALL_TOKENS_IN_UNISWAP";
+const UPDATE_TOP_LPS = "UPDATE_TOP_LPS";
 
 const offsetVolumes = [
-  '0x9ea3b5b4ec044b70375236a281986106457b20ef',
-  '0x05934eba98486693aaec2d00b0e9ce918e37dc3f',
-  '0x3d7e683fc9c86b4d653c9e47ca12517440fad14e',
-  '0xfae9c647ad7d89e738aba720acf09af93dc535f7',
-  '0x7296368fe9bcb25d3ecc19af13655b907818cc09',
-]
+  "0x9ea3b5b4ec044b70375236a281986106457b20ef",
+  "0x05934eba98486693aaec2d00b0e9ce918e37dc3f",
+  "0x3d7e683fc9c86b4d653c9e47ca12517440fad14e",
+  "0xfae9c647ad7d89e738aba720acf09af93dc535f7",
+  "0x7296368fe9bcb25d3ecc19af13655b907818cc09"
+];
 
 // format dayjs with the libraries that we need
-dayjs.extend(utc)
-dayjs.extend(weekOfYear)
+dayjs.extend(utc);
+dayjs.extend(weekOfYear);
 
-const GlobalDataContext = createContext()
+const GlobalDataContext = createContext();
+
 
 function useGlobalDataContext() {
-  return useContext(GlobalDataContext)
+  return useContext(GlobalDataContext);
 }
 
 function reducer(state, { type, payload }) {
   switch (type) {
     case UPDATE: {
-      const { data } = payload
+      const { data } = payload;
       return {
         ...state,
-        globalData: data,
-      }
+        globalData: data
+      };
     }
     case UPDATE_TXNS: {
-      const { transactions } = payload
+      const { transactions } = payload;
       return {
         ...state,
-        transactions,
-      }
+        transactions
+      };
     }
     case UPDATE_CHART: {
-      const { daily, weekly } = payload
+      const { daily, weekly } = payload;
       return {
         ...state,
         chartData: {
           daily,
-          weekly,
-        },
-      }
+          weekly
+        }
+      };
     }
     case UPDATE_ETH_PRICE: {
-      const { ethPrice, oneDayPrice, ethPriceChange } = payload
+      const { ethPrice, oneDayPrice, ethPriceChange } = payload;
       return {
         [ETH_PRICE_KEY]: ethPrice,
         oneDayPrice,
-        ethPriceChange,
-      }
+        ethPriceChange
+      };
     }
 
     case UPDATE_ALL_PAIRS_IN_UNISWAP: {
-      const { allPairs } = payload
+      const { allPairs } = payload;
       return {
         ...state,
-        allPairs,
-      }
+        allPairs
+      };
     }
 
     case UPDATE_ALL_TOKENS_IN_UNISWAP: {
-      const { allTokens } = payload
+      const { allTokens } = payload;
       return {
         ...state,
-        allTokens,
-      }
+        allTokens
+      };
     }
 
     case UPDATE_TOP_LPS: {
-      const { topLps } = payload
+      const { topLps } = payload;
       return {
         ...state,
-        topLps,
-      }
+        topLps
+      };
     }
     default: {
-      throw Error(`Unexpected action type in DataContext reducer: '${type}'.`)
+      throw Error(`Unexpected action type in DataContext reducer: '${type}'.`);
     }
   }
 }
 
 export default function Provider({ children }) {
-  const [state, dispatch] = useReducer(reducer, {})
+  const [state, dispatch] = useReducer(reducer, {});
   const update = useCallback((data) => {
     dispatch({
       type: UPDATE,
       payload: {
-        data,
-      },
-    })
-  }, [])
+        data
+      }
+    });
+  }, []);
 
   const updateTransactions = useCallback((transactions) => {
     dispatch({
       type: UPDATE_TXNS,
       payload: {
-        transactions,
-      },
-    })
-  }, [])
+        transactions
+      }
+    });
+  }, []);
 
   const updateChart = useCallback((daily, weekly) => {
     dispatch({
       type: UPDATE_CHART,
       payload: {
         daily,
-        weekly,
-      },
-    })
-  }, [])
+        weekly
+      }
+    });
+  }, []);
 
   const updateEthPrice = useCallback((ethPrice, oneDayPrice, ethPriceChange) => {
     dispatch({
@@ -149,37 +153,37 @@ export default function Provider({ children }) {
       payload: {
         ethPrice,
         oneDayPrice,
-        ethPriceChange,
-      },
-    })
-  }, [])
+        ethPriceChange
+      }
+    });
+  }, []);
 
   const updateAllPairsInUniswap = useCallback((allPairs) => {
     dispatch({
       type: UPDATE_ALL_PAIRS_IN_UNISWAP,
       payload: {
-        allPairs,
-      },
-    })
-  }, [])
+        allPairs
+      }
+    });
+  }, []);
 
   const updateAllTokensInUniswap = useCallback((allTokens) => {
     dispatch({
       type: UPDATE_ALL_TOKENS_IN_UNISWAP,
       payload: {
-        allTokens,
-      },
-    })
-  }, [])
+        allTokens
+      }
+    });
+  }, []);
 
   const updateTopLps = useCallback((topLps) => {
     dispatch({
       type: UPDATE_TOP_LPS,
       payload: {
-        topLps,
-      },
-    })
-  }, [])
+        topLps
+      }
+    });
+  }, []);
   return (
     <GlobalDataContext.Provider
       value={useMemo(
@@ -192,8 +196,8 @@ export default function Provider({ children }) {
             updateEthPrice,
             updateTopLps,
             updateAllPairsInUniswap,
-            updateAllTokensInUniswap,
-          },
+            updateAllTokensInUniswap
+          }
         ],
         [
           state,
@@ -203,13 +207,13 @@ export default function Provider({ children }) {
           updateChart,
           updateEthPrice,
           updateAllPairsInUniswap,
-          updateAllTokensInUniswap,
+          updateAllTokensInUniswap
         ]
       )}
     >
       {children}
     </GlobalDataContext.Provider>
-  )
+  );
 }
 
 /**
@@ -220,100 +224,145 @@ export default function Provider({ children }) {
  * @param {*} oldEthPrice
  */
 
-async function getGlobalData(ethPrice, oldEthPrice) {
+async function getGlobalData(ethPrice, oldEthPrice, allPairsData) {
   // data for each day , historic data used for % changes
-  let data = {}
-  let oneDayData = {}
-  let twoDayData = {}
+  let data = {};
 
   try {
     // get timestamps for the days
-    const utcCurrentTime = dayjs()
-    const utcOneDayBack = utcCurrentTime.subtract(1, 'day').unix()
-    const utcTwoDaysBack = utcCurrentTime.subtract(2, 'day').unix()
-    const utcOneWeekBack = utcCurrentTime.subtract(1, 'week').unix()
-    const utcTwoWeeksBack = utcCurrentTime.subtract(2, 'week').unix()
+    const utcCurrentTime = dayjs().utcOffset(0);
+    const utcOneWeekBack = utcCurrentTime.subtract(1, "week").unix();
 
-    // get the blocks needed for time travel queries
-    let [oneDayBlock, twoDayBlock, oneWeekBlock, twoWeekBlock] = await getBlocksFromTimestamps([
-      utcOneDayBack,
-      utcTwoDaysBack,
-      utcOneWeekBack,
-      utcTwoWeeksBack,
-    ])
+    data = {
+      oneDayVolumeUSD: 0,
+      oneWeekVolume: 0,
+      totalLiquidityUSD: 0,
+      weeklyVolumeChange: 0,
+      volumeChangeUSD: 0,
+      liquidityChangeUSD: 0,
+      oneDayTxns: [],
+      txnChange: 0
+    };
+
+    let totalVolumeUSDData = await testClient.query({
+      query: VOLUMES_DATA_BY_DATE,
+      variables: {
+        startTime: utcCurrentTime.unix() - 86400,
+        endTime: utcCurrentTime.unix(),
+        limit: 1000,
+        skip: 0
+      },
+      fetchPolicy: "cache-first"
+    });
+
+    let liquidityByPair = new Map();
+    let dayLiquidity = 0;
+    totalVolumeUSDData.data.getDaysVolumeByDate.forEach((day, i) => {
+      data.oneDayVolumeUSD += day.volume0USD;
+      if (day.liquidityUSD > 0)
+        liquidityByPair.set(day.pairAddress, day.liquidityUSD);
+    });
+
+    liquidityByPair.forEach((liquid, i) => {
+      dayLiquidity += liquid;
+    });
+
+    data.totalLiquidityUSD = dayLiquidity;
+
+    let totalVolumeUSDWeekData = await testClient.query({
+      query: VOLUMES_DATA_BY_DATE,
+      variables: {
+        startTime: utcOneWeekBack,
+        endTime: utcCurrentTime.unix(),
+        limit: 1000,
+        skip: 0
+      },
+      fetchPolicy: "cache-first"
+    });
+
+    totalVolumeUSDWeekData.data.getDaysVolumeByDate.forEach((day, i) => {
+      data.oneWeekVolume += day.volume0USD;
+      //data.totalLiquidityUSD+=day.liquidityUSD
+    });
+
+    // let [oneDayVolumeUSD, volumeChangeUSD] = get2DayPercentChange(
+    //   data.totalVolumeUSD,
+    //   oneDayData.totalVolumeUSD,
+    //   twoDayData.totalVolumeUSD
+    // )
 
     // fetch the global data
-    let result = await client.query({
-      query: GLOBAL_DATA(),
-      fetchPolicy: 'cache-first',
-    })
-    data = result.data.uniswapFactories[0]
+    // let result = await client.query({
+    //   query: GLOBAL_DATA(),
+    //   fetchPolicy: 'cache-first',
+    // })
+    // data = result.data.uniswapFactories[0]
 
-    // fetch the historical data
-    let oneDayResult = await client.query({
-      query: GLOBAL_DATA(oneDayBlock?.number),
-      fetchPolicy: 'cache-first',
-    })
-    oneDayData = oneDayResult.data.uniswapFactories[0]
+    // // fetch the historical data
+    // let oneDayResult = await client.query({
+    //   query: GLOBAL_DATA(oneDayBlock?.number),
+    //   fetchPolicy: 'cache-first',
+    // })
+    // oneDayData = oneDayResult.data.uniswapFactories[0]
 
-    let twoDayResult = await client.query({
-      query: GLOBAL_DATA(twoDayBlock?.number),
-      fetchPolicy: 'cache-first',
-    })
-    twoDayData = twoDayResult.data.uniswapFactories[0]
+    // let twoDayResult = await client.query({
+    //   query: GLOBAL_DATA(twoDayBlock?.number),
+    //   fetchPolicy: 'cache-first',
+    // })
+    // twoDayData = twoDayResult.data.uniswapFactories[0]
 
-    let oneWeekResult = await client.query({
-      query: GLOBAL_DATA(oneWeekBlock?.number),
-      fetchPolicy: 'cache-first',
-    })
-    const oneWeekData = oneWeekResult.data.uniswapFactories[0]
+    // let oneWeekResult = await client.query({
+    //   query: GLOBAL_DATA(oneWeekBlock?.number),
+    //   fetchPolicy: 'cache-first',
+    // })
+    // const oneWeekData = oneWeekResult.data.uniswapFactories[0]
 
-    let twoWeekResult = await client.query({
-      query: GLOBAL_DATA(twoWeekBlock?.number),
-      fetchPolicy: 'cache-first',
-    })
-    const twoWeekData = twoWeekResult.data.uniswapFactories[0]
+    // let twoWeekResult = await client.query({
+    //   query: GLOBAL_DATA(twoWeekBlock?.number),
+    //   fetchPolicy: 'cache-first',
+    // })
+    // const twoWeekData = twoWeekResult.data.uniswapFactories[0]
 
-    if (data && oneDayData && twoDayData && twoWeekData) {
-      let [oneDayVolumeUSD, volumeChangeUSD] = get2DayPercentChange(
-        data.totalVolumeUSD,
-        oneDayData.totalVolumeUSD,
-        twoDayData.totalVolumeUSD
-      )
+    // if (data && oneDayData && twoDayData && twoWeekData) {
+    //   let [oneDayVolumeUSD, volumeChangeUSD] = get2DayPercentChange(
+    //     data.totalVolumeUSD,
+    //     oneDayData.totalVolumeUSD,
+    //     twoDayData.totalVolumeUSD
+    //   )
 
-      const [oneWeekVolume, weeklyVolumeChange] = get2DayPercentChange(
-        data.totalVolumeUSD,
-        oneWeekData.totalVolumeUSD,
-        twoWeekData.totalVolumeUSD
-      )
+    //   const [oneWeekVolume, weeklyVolumeChange] = get2DayPercentChange(
+    //     data.totalVolumeUSD,
+    //     oneWeekData.totalVolumeUSD,
+    //     twoWeekData.totalVolumeUSD
+    //   )
 
-      const [oneDayTxns, txnChange] = get2DayPercentChange(
-        data.txCount,
-        oneDayData.txCount ? oneDayData.txCount : 0,
-        twoDayData.txCount ? twoDayData.txCount : 0
-      )
+    //   const [oneDayTxns, txnChange] = get2DayPercentChange(
+    //     data.txCount,
+    //     oneDayData.txCount ? oneDayData.txCount : 0,
+    //     twoDayData.txCount ? twoDayData.txCount : 0
+    //   )
 
-      // format the total liquidity in USD
-      data.totalLiquidityUSD = data.totalLiquidityETH * ethPrice
-      const liquidityChangeUSD = getPercentChange(
-        data.totalLiquidityETH * ethPrice,
-        oneDayData.totalLiquidityETH * oldEthPrice
-      )
+    //   // format the total liquidity in USD
+    //   data.totalLiquidityUSD = data.totalLiquidityETH * ethPrice
+    //   const liquidityChangeUSD = getPercentChange(
+    //     data.totalLiquidityETH * ethPrice,
+    //     oneDayData.totalLiquidityETH * oldEthPrice
+    //   )
 
-      // add relevant fields with the calculated amounts
-      data.oneDayVolumeUSD = oneDayVolumeUSD
-      data.oneWeekVolume = oneWeekVolume
-      data.weeklyVolumeChange = weeklyVolumeChange
-      data.volumeChangeUSD = volumeChangeUSD
-      data.liquidityChangeUSD = liquidityChangeUSD
-      data.oneDayTxns = oneDayTxns
-      data.txnChange = txnChange
-    }
+    //   // add relevant fields with the calculated amounts
+    //   data.oneDayVolumeUSD = oneDayVolumeUSD
+    //   data.oneWeekVolume = oneWeekVolume
+    //   data.weeklyVolumeChange = weeklyVolumeChange
+    //   data.volumeChangeUSD = volumeChangeUSD
+    //   data.liquidityChangeUSD = liquidityChangeUSD
+    //   data.oneDayTxns = oneDayTxns
+    //   data.txnChange = txnChange
+    //}
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
 
-  return data
+  return data;
 }
 
 /**
@@ -322,278 +371,290 @@ async function getGlobalData(ethPrice, oldEthPrice) {
  * @param {*} oldestDateToFetch // start of window to fetch from
  */
 
-let checked = false
+let checked = false;
 
-const getChartData = async (oldestDateToFetch, offsetData) => {
-  let data = []
-  let weeklyData = []
-  const utcEndTime = dayjs.utc()
-  let skip = 0
-  let allFound = false
+
+const getChartData = async (oldestDateToFetch, offsetData, allPairsData) => {
+  var data = [];
+  let weeklyData = [];
+  let skip = 0;
+  let allFound = false;
+
+  const year = 31536000;
+
+  let dataFinal = [];
+
+  const utcCurrentTime = dayjs().utcOffset(0).startOf("date");
+  const utcCurrentTime2 = dayjs().utcOffset(0);
+
+  var dataRcv = [];
+  var dataPerDay = [];
 
   try {
     while (!allFound) {
-      let result = await client.query({
-        query: GLOBAL_CHART,
+      let result = await testClient.query({
+        query: VOLUMES_DATA_BY_DATE,
         variables: {
-          startTime: oldestDateToFetch,
-          skip,
+          startTime: utcCurrentTime.unix() - year,
+          endTime: utcCurrentTime2.unix(),
+          limit: 1000,
+          skip: skip
         },
-        fetchPolicy: 'cache-first',
-      })
-      skip += 1000
-      data = data.concat(result.data.uniswapDayDatas)
-      if (result.data.uniswapDayDatas.length < 1000) {
-        allFound = true
+        fetchPolicy: "cache-first"
+      });
+      skip += 1000;
+      dataRcv = dataRcv.concat(result.data.getDaysVolumeByDate);
+      if (result.data.getDaysVolumeByDate.length < 1000) {
+        allFound = true;
       }
     }
 
-    if (data) {
-      let dayIndexSet = new Set()
-      let dayIndexArray = []
-      const oneDay = 24 * 60 * 60
+    let currentTime = 0;
+    let volumePerDay = 0;
+    let totalLiquidity = 0;
+    let counter = 0;
+    let liquidityByPair = new Map();
+
+    dataRcv.forEach((dayData, i) => {
+      if (i === 0) {
+        currentTime = dayData.timeStamp;
+      }
+
+      const utcCurrentTime = dayjs.unix(currentTime).utcOffset(0).startOf("date").unix();
+      const utcDayTime = dayjs.unix(dayData.timeStamp).utcOffset(0).startOf("date").unix();
+
+      if (utcDayTime > utcCurrentTime) {
+        let dayLiquidity = 0;
+        liquidityByPair.forEach((liquid, i) => {
+          dayLiquidity += liquid;
+        });
+
+        dataFinal = {
+          id: counter,
+          date: utcCurrentTime,
+          totalVolumeUSD: 0,
+          dailyVolumeUSD: parseFloat(volumePerDay),
+          dailyVolumeETH: 0,
+          totalLiquidityUSD: parseFloat(dayLiquidity),
+          totalLiquidityETH: 0
+        };
+        dataPerDay.push(dataFinal);
+        currentTime = dayData.timeStamp;
+        volumePerDay = 0;
+        totalLiquidity = 0;
+        counter += 1;
+        liquidityByPair.clear();
+      }
+      if (dayData.liquidityUSD > 0)
+        liquidityByPair.set(dayData.pairAddress, dayData.liquidityUSD);
+      volumePerDay += dayData.volume0USD;
+    });
+    //Push last day
+    let dayLiquidity = 0;
+    liquidityByPair.forEach((liquid, i) => {
+      dayLiquidity += liquid;
+    });
+    dataFinal = {
+      id: counter,
+      date: currentTime,
+      totalVolumeUSD: 0,
+      dailyVolumeUSD: parseFloat(volumePerDay),
+      dailyVolumeETH: 0,
+      totalLiquidityUSD: dayLiquidity,
+      totalLiquidityETH: 0
+    };
+    dataPerDay.push(dataFinal);
+
+    // console.log( " Cur time " + currentTime + " :"  + dayjs.unix(currentTime).utcOffset(0).startOf('date').format("DD/MM/YYYY") + " Day volume " + volumePerDay + " Day luquidity " + dayLiquidity)
+
+    if (dataRcv) {
+      let dayIndexSet = new Set();
+      let dayIndexArray = [];
+      const oneDay = 24 * 60 * 60;
 
       // for each day, parse the daily volume and format for chart array
-      data.forEach((dayData, i) => {
+      dataPerDay.forEach((dayData, i) => {
         // add the day index to the set of days
-        dayIndexSet.add((data[i].date / oneDay).toFixed(0))
-        dayIndexArray.push(data[i])
-        dayData.dailyVolumeUSD = parseFloat(dayData.dailyVolumeUSD)
-      })
-
-      // fill in empty days ( there will be no day datas if no trades made that day )
-      let timestamp = data[0].date ? data[0].date : oldestDateToFetch
-      let latestLiquidityUSD = data[0].totalLiquidityUSD
-      let latestDayDats = data[0].mostLiquidTokens
-      let index = 1
-      while (timestamp < utcEndTime.unix() - oneDay) {
-        const nextDay = timestamp + oneDay
-        let currentDayIndex = (nextDay / oneDay).toFixed(0)
-
-        if (!dayIndexSet.has(currentDayIndex)) {
-          data.push({
-            date: nextDay,
-            dailyVolumeUSD: 0,
-            totalLiquidityUSD: latestLiquidityUSD,
-            mostLiquidTokens: latestDayDats,
-          })
-        } else {
-          latestLiquidityUSD = dayIndexArray[index].totalLiquidityUSD
-          latestDayDats = dayIndexArray[index].mostLiquidTokens
-          index = index + 1
-        }
-        timestamp = nextDay
-      }
+        dayIndexSet.add((dataPerDay[i].timeStamp / oneDay).toFixed(0));
+        dayIndexArray.push(dayData);
+        data.push(dayData);
+      });
     }
 
+
     // format weekly data for weekly sized chunks
-    data = data.sort((a, b) => (parseInt(a.date) > parseInt(b.date) ? 1 : -1))
-    let startIndexWeekly = -1
-    let currentWeek = -1
+    data = data.sort((a, b) => (parseInt(a.date) > parseInt(b.date) ? 1 : -1));
+    let startIndexWeekly = -1;
+    let currentWeek = -1;
 
     data.forEach((entry, i) => {
-      const date = data[i].date
+      const date = data[i].date;
 
       // hardcoded fix for offset volume
       offsetData &&
-        !checked &&
-        offsetData.map((dayData) => {
-          if (dayData[date]) {
-            data[i].dailyVolumeUSD = parseFloat(data[i].dailyVolumeUSD) - parseFloat(dayData[date].dailyVolumeUSD)
-          }
-          return true
-        })
+      !checked &&
+      offsetData.map((dayData) => {
+        if (dayData[date]) {
+          data[i].dailyVolumeUSD = parseFloat(data[i].dailyVolumeUSD) - parseFloat(dayData[date].dailyVolumeUSD);
+        }
+        return true;
+      });
 
-      const week = dayjs.utc(dayjs.unix(data[i].date)).week()
+      const week = dayjs.utc(dayjs.unix(data[i].date)).week();
       if (week !== currentWeek) {
-        currentWeek = week
-        startIndexWeekly++
+        currentWeek = week;
+        startIndexWeekly++;
       }
-      weeklyData[startIndexWeekly] = weeklyData[startIndexWeekly] || {}
-      weeklyData[startIndexWeekly].date = data[i].date
+      weeklyData[startIndexWeekly] = weeklyData[startIndexWeekly] || {};
+      weeklyData[startIndexWeekly].date = data[i].date;
       weeklyData[startIndexWeekly].weeklyVolumeUSD =
-        (weeklyData[startIndexWeekly].weeklyVolumeUSD ?? 0) + data[i].dailyVolumeUSD
-    })
+        (weeklyData[startIndexWeekly].weeklyVolumeUSD ?? 0) + data[i].dailyVolumeUSD;
+    });
 
     if (!checked) {
-      checked = true
+      checked = true;
     }
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
-  return [data, weeklyData]
-}
+
+  
+  return [data, weeklyData];
+};
 
 /**
  * Get and format transactions for global page
  */
-const getGlobalTransactions = async () => {
-  let transactions = {}
-
+const getGlobalTransactions = async (allPairsData) => {
+  let transactions = {};
   try {
-    let result = await client.query({
-      query: GLOBAL_TXNS,
-      fetchPolicy: 'cache-first',
-    })
-    transactions.mints = []
-    transactions.burns = []
-    transactions.swaps = []
-    result?.data?.transactions &&
-      result.data.transactions.map((transaction) => {
-        if (transaction.mints.length > 0) {
-          transaction.mints.map((mint) => {
-            return transactions.mints.push(mint)
-          })
-        }
-        if (transaction.burns.length > 0) {
-          transaction.burns.map((burn) => {
-            return transactions.burns.push(burn)
-          })
-        }
-        if (transaction.swaps.length > 0) {
-          transaction.swaps.map((swap) => {
-            return transactions.swaps.push(swap)
-          })
-        }
-        return true
-      })
-  } catch (e) {
-    console.log(e)
-  }
+    let result = await testClient.query({
+      query: GLOBAL_TXNS_BASED,
+      fetchPolicy: "cache-first",
+      variables: {
+        limit: 100,
+        skip: 0
+      }
+    });
+    transactions.mints = [];
+    transactions.burns = [];
+    transactions.swaps = [];
 
-  return transactions
-}
+    result?.data?.transactionMany &&
+    result.data.transactionMany.map((transaction) => {
+      let pair = allPairsData[transaction.pairAddress];
+
+      if (pair && pair.token1Info) {
+        let amount0InBn = new BigNumber(transaction.amount0In);
+        let amount0In = ethers.utils.formatUnits(amount0InBn,pair.token0Info.decimals);
+
+        let amount1InBn = new BigNumber(transaction.amount1In);
+        let amount1In = ethers.utils.formatUnits(amount1InBn,pair.token1Info.decimals);
+
+        let amount0OutBn = new BigNumber(transaction.amount0Out);
+        let amount0Out = ethers.utils.formatUnits(amount0OutBn,pair.token0Info.decimals);
+
+        let amount1OutBn = new BigNumber(transaction.amount1Out);
+        let amount1Out = ethers.utils.formatUnits(amount1OutBn,pair.token1Info.decimals);
+        if(transaction.transactionHash == '0x7f0d58b6f67ed2cd0dfcda4c4bf8f32d9055b15b2d4ed817fa7a2f01e1d5ee33') {
+          let stop = 1
+        }
+        let tx = {
+          token0Symbol: pair.token0Info.symbol,
+          token1Symbol: pair.token1Info.symbol,
+          amount0In: amount0In,
+          amount0Out: amount0Out,
+          amount1In: amount1In,
+          amount1Out: amount1Out,
+          hash: transaction.transactionHash,
+          timeStamp: transaction.timeStamp,
+          amountUSD: transaction.amountUSD,
+          to: transaction.to
+        };
+        transactions.swaps.push(tx);
+      }
+      return true;
+    });
+  } catch (e) {
+    console.log(e);
+  }
+  return transactions;
+};
 
 /**
  * Gets the current price  of ETH, 24 hour price, and % change between them
  */
 const getEthPrice = async () => {
-  const utcCurrentTime = dayjs()
-  const utcOneDayBack = utcCurrentTime.subtract(1, 'day').startOf('minute').unix()
+  // const utcCurrentTime = dayjs();
+  // const utcOneDayBack = utcCurrentTime.subtract(1, "day").startOf("minute").unix();
 
-  let ethPrice = 0
-  let ethPriceOneDay = 0
-  let priceChangeETH = 0
+  let ethPrice = 0;
+  let ethPriceOneDay = 0;
+  let priceChangeETH = 0;
 
-  try {
-    let oneDayBlock = await getBlockFromTimestamp(utcOneDayBack)
-    let result = await client.query({
-      query: ETH_PRICE(),
-      fetchPolicy: 'cache-first',
-    })
-    let resultOneDay = await client.query({
-      query: ETH_PRICE(oneDayBlock),
-      fetchPolicy: 'cache-first',
-    })
-    const currentPrice = result?.data?.bundles[0]?.ethPrice
-    const oneDayBackPrice = resultOneDay?.data?.bundles[0]?.ethPrice
-    priceChangeETH = getPercentChange(currentPrice, oneDayBackPrice)
-    ethPrice = currentPrice
-    ethPriceOneDay = oneDayBackPrice
-  } catch (e) {
-    console.log(e)
-  }
+  // try {
+  //   let oneDayBlock = await getBlockFromTimestamp(utcOneDayBack);
+  //   let result = await client.query({
+  //     query: ETH_PRICE(),
+  //     fetchPolicy: "cache-first"
+  //   });
+  //   let resultOneDay = await client.query({
+  //     query: ETH_PRICE(oneDayBlock),
+  //     fetchPolicy: "cache-first"
+  //   });
+  //   const currentPrice = result?.data?.bundles[0]?.ethPrice;
+  //   const oneDayBackPrice = resultOneDay?.data?.bundles[0]?.ethPrice;
+  //   priceChangeETH = 0//getPercentChange(currentPrice, oneDayBackPrice);
+  //   ethPrice = 0//currentPrice;
+  //   ethPriceOneDay = 0//oneDayBackPrice;
+  // } catch (e) {
+  //   console.log(e);
+  // }
 
-  return [ethPrice, ethPriceOneDay, priceChangeETH]
-}
-
-const PAIRS_TO_FETCH = 500
-const TOKENS_TO_FETCH = 500
-
-/**
- * Loop through every pair on uniswap, used for search
- */
-async function getAllPairsOnUniswap() {
-  try {
-    let allFound = false
-    let pairs = []
-    let skipCount = 0
-    while (!allFound) {
-      let result = await client.query({
-        query: ALL_PAIRS,
-        variables: {
-          skip: skipCount,
-        },
-        fetchPolicy: 'cache-first',
-      })
-      skipCount = skipCount + PAIRS_TO_FETCH
-      pairs = pairs.concat(result?.data?.pairs)
-      if (result?.data?.pairs.length < PAIRS_TO_FETCH || pairs.length > PAIRS_TO_FETCH) {
-        allFound = true
-      }
-    }
-    return pairs
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-/**
- * Loop through every token on uniswap, used for search
- */
-async function getAllTokensOnUniswap() {
-  try {
-    let allFound = false
-    let skipCount = 0
-    let tokens = []
-    while (!allFound) {
-      let result = await client.query({
-        query: ALL_TOKENS,
-        variables: {
-          skip: skipCount,
-        },
-        fetchPolicy: 'cache-first',
-      })
-      tokens = tokens.concat(result?.data?.tokens)
-      if (result?.data?.tokens?.length < TOKENS_TO_FETCH || tokens.length > TOKENS_TO_FETCH) {
-        allFound = true
-      }
-      skipCount = skipCount += TOKENS_TO_FETCH
-    }
-    return tokens
-  } catch (e) {
-    console.log(e)
-  }
-}
+  return [ethPrice, ethPriceOneDay, priceChangeETH];
+};
 
 /**
  * Hook that fetches overview data, plus all tokens and pairs for search
  */
 export function useGlobalData() {
-  const [state, { update, updateAllPairsInUniswap, updateAllTokensInUniswap }] = useGlobalDataContext()
-  const [ethPrice, oldEthPrice] = useEthPrice()
+  const [state, {
+    update,
+    updateAllPairsInUniswap,
+    updateAllTokensInUniswap
+  }] = useGlobalDataContext();
+  const [ethPrice, oldEthPrice] = useEthPrice();
 
-  const data = state?.globalData
+  const data = state?.globalData;
+  const allPairsData = useAllPairData();
 
-  // const combinedVolume = useTokenDataCombined(offsetVolumes)
+  //const combinedVolume = useTokenDataCombined(offsetVolumes)
 
   useEffect(() => {
+
     async function fetchData() {
-      let globalData = await getGlobalData(ethPrice, oldEthPrice)
 
-      globalData && update(globalData)
+      let globalData = await getGlobalData(ethPrice, oldEthPrice, allPairsData);
 
-      let allPairs = await getAllPairsOnUniswap()
-      updateAllPairsInUniswap(allPairs)
-
-      let allTokens = await getAllTokensOnUniswap()
-      updateAllTokensInUniswap(allTokens)
+      globalData && update(globalData);
     }
-    if (!data && ethPrice && oldEthPrice) {
-      fetchData()
-    }
-  }, [ethPrice, oldEthPrice, update, data, updateAllPairsInUniswap, updateAllTokensInUniswap])
 
-  return data || {}
+    if (!data && ethPrice && oldEthPrice && Object.keys(allPairsData).length > 0) {
+      fetchData();
+    }
+  }, [ethPrice, allPairsData, oldEthPrice, update, data, updateAllPairsInUniswap, updateAllTokensInUniswap]);
+
+  return data || {};
 }
 
-export function useGlobalChartData() {
-  const [state, { updateChart }] = useGlobalDataContext()
-  const [oldestDateFetch, setOldestDateFetched] = useState()
-  const [activeWindow] = useTimeframe()
 
-  const chartDataDaily = state?.chartData?.daily
-  const chartDataWeekly = state?.chartData?.weekly
+export function useGlobalChartData() {
+  const [state, { updateChart }] = useGlobalDataContext();
+  const [oldestDateFetch, setOldestDateFetched] = useState();
+  const [activeWindow] = useTimeframe();
+
+  const chartDataDaily = state?.chartData?.daily;
+  const chartDataWeekly = state?.chartData?.weekly;
 
   /**
    * Keep track of oldest date fetched. Used to
@@ -602,16 +663,17 @@ export function useGlobalChartData() {
    */
   useEffect(() => {
     // based on window, get starttime
-    let startTime = getTimeframe(activeWindow)
+    let startTime = getTimeframe(activeWindow);
 
     if ((activeWindow && startTime < oldestDateFetch) || !oldestDateFetch) {
-      setOldestDateFetched(startTime)
+      setOldestDateFetched(startTime);
     }
-  }, [activeWindow, oldestDateFetch])
+  }, [activeWindow, oldestDateFetch]);
 
   // fix for rebass tokens
 
-  const combinedData = useTokenChartDataCombined(offsetVolumes)
+  const combinedData = useTokenChartDataCombined(offsetVolumes);
+  const allPairsData = useAllPairData();
 
   /**
    * Fetch data if none fetched or older data is needed
@@ -619,61 +681,66 @@ export function useGlobalChartData() {
   useEffect(() => {
     async function fetchData() {
       // historical stuff for chart
-      let [newChartData, newWeeklyData] = await getChartData(oldestDateFetch, combinedData)
-      updateChart(newChartData, newWeeklyData)
+      let [newChartData, newWeeklyData] = await getChartData(oldestDateFetch, combinedData, allPairsData);
+      updateChart(newChartData, newWeeklyData);
     }
-    if (oldestDateFetch && !(chartDataDaily && chartDataWeekly) && combinedData) {
-      fetchData()
-    }
-  }, [chartDataDaily, chartDataWeekly, combinedData, oldestDateFetch, updateChart])
 
-  return [chartDataDaily, chartDataWeekly]
+    if (oldestDateFetch && !(chartDataDaily && chartDataWeekly) && combinedData && Object.keys(allPairsData).length > 0) {
+      fetchData();
+    }
+  }, [chartDataDaily, chartDataWeekly, combinedData, oldestDateFetch, updateChart, allPairsData]);
+
+  return [chartDataDaily, chartDataWeekly];
 }
 
 export function useGlobalTransactions() {
-  const [state, { updateTransactions }] = useGlobalDataContext()
-  const transactions = state?.transactions
+  const [state, { updateTransactions }] = useGlobalDataContext();
+  const transactions = state?.transactions;
+  const allPairsData = useAllPairData();
+
   useEffect(() => {
     async function fetchData() {
-      if (!transactions) {
-        let txns = await getGlobalTransactions()
-        updateTransactions(txns)
+      if (!transactions && Object.keys(allPairsData).length > 0) {
+        let txns = await getGlobalTransactions(allPairsData);
+        updateTransactions(txns);
       }
     }
-    fetchData()
-  }, [updateTransactions, transactions])
-  return transactions
+
+    fetchData();
+  }, [updateTransactions, transactions, allPairsData]);
+  return transactions;
 }
 
 export function useEthPrice() {
-  const [state, { updateEthPrice }] = useGlobalDataContext()
-  const ethPrice = state?.[ETH_PRICE_KEY]
-  const ethPriceOld = state?.['oneDayPrice']
-  useEffect(() => {
-    async function checkForEthPrice() {
-      if (!ethPrice) {
-        let [newPrice, oneDayPrice, priceChange] = await getEthPrice()
-        updateEthPrice(newPrice, oneDayPrice, priceChange)
-      }
-    }
-    checkForEthPrice()
-  }, [ethPrice, updateEthPrice])
+  const [state, { updateEthPrice }] = useGlobalDataContext();
+  const ethPrice = 1//state?.[ETH_PRICE_KEY];
+  const ethPriceOld = 1//state?.["oneDayPrice"];
+  // useEffect(() => {
+  //   async function checkForEthPrice() {
+  //     if (!ethPrice) {
+  //       let [newPrice, oneDayPrice, priceChange] = await getEthPrice();
+  //       updateEthPrice(newPrice, oneDayPrice, priceChange);
+  //     }
+  //   }
 
-  return [ethPrice, ethPriceOld]
+  //   checkForEthPrice();
+  // }, [ethPrice, updateEthPrice]);
+
+  return [ethPrice, ethPriceOld];
 }
 
 export function useAllPairsInUniswap() {
-  const [state] = useGlobalDataContext()
-  let allPairs = state?.allPairs
+  const [state] = useGlobalDataContext();
+  let allPairs = state?.allPairs;
 
-  return allPairs || []
+  return allPairs || [];
 }
 
 export function useAllTokensInUniswap() {
-  const [state] = useGlobalDataContext()
-  let allTokens = state?.allTokens
+  const [state] = useGlobalDataContext();
+  let allTokens = state?.allTokens;
 
-  return allTokens || []
+  return allTokens || [];
 }
 
 /**
@@ -681,66 +748,5 @@ export function useAllTokensInUniswap() {
  * @TODO Not a perfect lookup needs improvement
  */
 export function useTopLps() {
-  const [state, { updateTopLps }] = useGlobalDataContext()
-  let topLps = state?.topLps
-
-  const allPairs = useAllPairData()
-
-  useEffect(() => {
-    async function fetchData() {
-      // get top 20 by reserves
-      let topPairs = Object.keys(allPairs)
-        ?.sort((a, b) => parseFloat(allPairs[a].reserveUSD > allPairs[b].reserveUSD ? -1 : 1))
-        ?.slice(0, 99)
-        .map((pair) => pair)
-
-      let topLpLists = await Promise.all(
-        topPairs.map(async (pair) => {
-          // for each one, fetch top LPs
-          try {
-            const { data: results } = await client.query({
-              query: TOP_LPS_PER_PAIRS,
-              variables: {
-                pair: pair.toString(),
-              },
-              fetchPolicy: 'cache-first',
-            })
-            if (results) {
-              return results.liquidityPositions
-            }
-          } catch (e) {}
-        })
-      )
-
-      // get the top lps from the results formatted
-      const topLps = []
-      topLpLists
-        .filter((i) => !!i) // check for ones not fetched correctly
-        .map((list) => {
-          return list.map((entry) => {
-            const pairData = allPairs[entry.pair.id]
-            return topLps.push({
-              user: entry.user,
-              pairName: pairData.token0.symbol + '-' + pairData.token1.symbol,
-              pairAddress: entry.pair.id,
-              token0: pairData.token0.id,
-              token1: pairData.token1.id,
-              usd:
-                (parseFloat(entry.liquidityTokenBalance) / parseFloat(pairData.totalSupply)) *
-                parseFloat(pairData.reserveUSD),
-            })
-          })
-        })
-
-      const sorted = topLps.sort((a, b) => (a.usd > b.usd ? -1 : 1))
-      const shorter = sorted.splice(0, 100)
-      updateTopLps(shorter)
-    }
-
-    if (!topLps && allPairs && Object.keys(allPairs).length > 0) {
-      fetchData()
-    }
-  })
-
-  return topLps
+ return [];
 }

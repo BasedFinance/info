@@ -180,40 +180,40 @@ export const Search = ({ small = false }) => {
   const [searchedTokens, setSearchedTokens] = useState([])
   const [searchedPairs, setSearchedPairs] = useState([])
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        if (value?.length > 0) {
-          let tokens = await client.query({
-            query: TOKEN_SEARCH,
-            variables: {
-              value: value ? value.toUpperCase() : '',
-              id: value,
-            },
-          })
+  // useEffect(() => {
+  //   async function fetchData() {
+  //     try {
+  //       if (value?.length > 0) {
+  //         let tokens = await client.query({
+  //           query: TOKEN_SEARCH,
+  //           variables: {
+  //             value: value ? value.toUpperCase() : '',
+  //             id: value,
+  //           },
+  //         })
 
-          let pairs = await client.query({
-            query: PAIR_SEARCH,
-            variables: {
-              tokens: tokens.data.asSymbol?.map((t) => t.id),
-              id: value,
-            },
-          })
+  //         let pairs = await client.query({
+  //           query: PAIR_SEARCH,
+  //           variables: {
+  //             tokens: tokens.data.asSymbol?.map((t) => t.id),
+  //             id: value,
+  //           },
+  //         })
 
-          setSearchedPairs(
-            updateNameData(pairs.data.as0)
-              .concat(updateNameData(pairs.data.as1))
-              .concat(updateNameData(pairs.data.asAddress))
-          )
-          const foundTokens = tokens.data.asSymbol.concat(tokens.data.asAddress).concat(tokens.data.asName)
-          setSearchedTokens(foundTokens)
-        }
-      } catch (e) {
-        console.log(e)
-      }
-    }
-    fetchData()
-  }, [value])
+  //         setSearchedPairs(
+  //           updateNameData(pairs.data.as0)
+  //             .concat(updateNameData(pairs.data.as1))
+  //             .concat(updateNameData(pairs.data.asAddress))
+  //         )
+  //         const foundTokens = tokens.data.asSymbol.concat(tokens.data.asAddress).concat(tokens.data.asName)
+  //         setSearchedTokens(foundTokens)
+  //       }
+  //     } catch (e) {
+  //       console.log(e)
+  //     }
+  //   }
+  //   fetchData()
+  // }, [value])
 
   function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
@@ -289,7 +289,7 @@ export const Search = ({ small = false }) => {
           .filter((token) => {
             if (TOKEN_BLACKLIST.includes(token.id)) {
               return false
-            }
+            } 
             const regexMatches = Object.keys(token).map((tokenEntryKey) => {
               const isAddress = value.slice(0, 2) === '0x'
               if (tokenEntryKey === 'id' && isAddress) {
@@ -309,57 +309,65 @@ export const Search = ({ small = false }) => {
   }, [allTokenData, uniqueTokens, value])
 
   const filteredPairList = useMemo(() => {
-    return uniquePairs
-      ? uniquePairs
-          .sort((a, b) => {
-            const pairA = allPairData[a.id]
-            const pairB = allPairData[b.id]
-            if (pairA?.trackedReserveETH && pairB?.trackedReserveETH) {
-              return parseFloat(pairA.trackedReserveETH) > parseFloat(pairB.trackedReserveETH) ? -1 : 1
-            }
-            if (pairA?.trackedReserveETH && !pairB?.trackedReserveETH) {
-              return -1
-            }
-            if (!pairA?.trackedReserveETH && pairB?.trackedReserveETH) {
-              return 1
-            }
-            return 0
-          })
+    let pairs = [];
+    if(!allPairData)
+      return[];
+
+      for (let [key, value] of Object.entries(allPairData)) {
+        // if( value.token0Info.tokenAddress === '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83' ){
+        //   let tokenInf = value.token1Info;
+        //   value.token1Info = value.token0Info;
+        //   value.token0Info = tokenInf;
+        // }
+        
+        pairs.push(value);
+      }
+    return pairs
+      ? pairs
+          // .sort((a, b) => {
+          //   const pairA = allPairData[a.id]
+          //   const pairB = allPairData[b.id]
+          //   if (pairA?.trackedReserveETH && pairB?.trackedReserveETH) {
+          //     return parseFloat(pairA.trackedReserveETH) > parseFloat(pairB.trackedReserveETH) ? -1 : 1
+          //   }
+          //   if (pairA?.trackedReserveETH && !pairB?.trackedReserveETH) {
+          //     return -1
+          //   }
+          //   if (!pairA?.trackedReserveETH && pairB?.trackedReserveETH) {
+          //     return 1
+          //   }
+          //   return 0
+          // })
           .filter((pair) => {
-            if (PAIR_BLACKLIST.includes(pair.id)) {
-              return false
-            }
             if (value && value.includes(' ')) {
               const pairA = value.split(' ')[0]?.toUpperCase()
               const pairB = value.split(' ')[1]?.toUpperCase()
               return (
-                (pair.token0.symbol.includes(pairA) || pair.token0.symbol.includes(pairB)) &&
-                (pair.token1.symbol.includes(pairA) || pair.token1.symbol.includes(pairB))
+                (pair.token0Info.symbol.includes(pairA) || pair.token0Info.symbol.includes(pairB)) &&
+                (pair.token1Info.symbol.includes(pairA) || pair.token1Info.symbol.includes(pairB))
               )
             }
             if (value && value.includes('-')) {
               const pairA = value.split('-')[0]?.toUpperCase()
               const pairB = value.split('-')[1]?.toUpperCase()
               return (
-                (pair.token0.symbol.includes(pairA) || pair.token0.symbol.includes(pairB)) &&
-                (pair.token1.symbol.includes(pairA) || pair.token1.symbol.includes(pairB))
+                (pair.token0Info.symbol.includes(pairA) || pair.token0Info.symbol.includes(pairB)) &&
+                (pair.token1Info.symbol.includes(pairA) || pair.token1Info.symbol.includes(pairB))
               )
             }
             const regexMatches = Object.keys(pair).map((field) => {
               const isAddress = value.slice(0, 2) === '0x'
-              if (field === 'id' && isAddress) {
+              if (field === 'pairAddress' && isAddress) {
                 return pair[field].match(new RegExp(escapeRegExp(value), 'i'))
               }
-              if (field === 'token0') {
+              if (field === 'token0Info') {
                 return (
-                  pair[field].symbol.match(new RegExp(escapeRegExp(value), 'i')) ||
-                  pair[field].name.match(new RegExp(escapeRegExp(value), 'i'))
+                  pair[field].symbol.match(new RegExp(escapeRegExp(value), 'i')) 
                 )
               }
-              if (field === 'token1') {
+              if (field === 'token1Info') {
                 return (
-                  pair[field].symbol.match(new RegExp(escapeRegExp(value), 'i')) ||
-                  pair[field].name.match(new RegExp(escapeRegExp(value), 'i'))
+                  pair[field].symbol.match(new RegExp(escapeRegExp(value), 'i')) 
                 )
               }
               return false
@@ -430,10 +438,10 @@ export const Search = ({ small = false }) => {
               : below410
               ? 'Search...'
               : below470
-              ? 'Search Uniswap...'
+              ? 'Search BasedDex ...'
               : below700
-              ? 'Search pairs and tokens...'
-              : 'Search Uniswap pairs and tokens...'
+              ? 'Search pairs ...'
+              : 'Search BasedDex pairs ...'
           }
           value={value}
           onChange={(e) => {
@@ -462,11 +470,11 @@ export const Search = ({ small = false }) => {
               //format incorrect names
               updateNameData(pair)
               return (
-                <BasicLink to={'/pair/' + pair.id} key={pair.id} onClick={onDismiss}>
+                <BasicLink to={'/pair/' + pair.pairAddress} key={pair.pairAddress} onClick={onDismiss}>
                   <MenuItem>
-                    <DoubleTokenLogo a0={pair?.token0?.id} a1={pair?.token1?.id} margin={true} />
+                    <DoubleTokenLogo a0={pair?.token0Info?.tokenAddress} a1={pair?.token1Info?.tokenAddress} margin={true} />
                     <TYPE.body style={{ marginLeft: '10px' }}>
-                      {pair.token0.symbol + '-' + pair.token1.symbol} Pair
+                      {pair.token0Info.symbol + '-' + pair.token1Info.symbol} Pair
                     </TYPE.body>
                   </MenuItem>
                 </BasicLink>
@@ -484,11 +492,11 @@ export const Search = ({ small = false }) => {
             </Blue>
           </Heading>
         </div>
-        <Heading>
+        {/* <Heading>
           <Gray>Tokens</Gray>
-        </Heading>
+        </Heading> */}
         <div>
-          {Object.keys(filteredTokenList).length === 0 && (
+          {/* {Object.keys(filteredTokenList).length === 0 && (
             <MenuItem>
               <TYPE.body>No results</TYPE.body>
             </MenuItem>
@@ -507,7 +515,7 @@ export const Search = ({ small = false }) => {
                 </MenuItem>
               </BasicLink>
             )
-          })}
+          })} */}
 
           <Heading
             hide={!(Object.keys(filteredTokenList).length > 3 && Object.keys(filteredTokenList).length >= tokensShown)}

@@ -55,7 +55,7 @@ function PinnedData({ history, open, setSavedOpen }) {
     <RightColumn open={open} onClick={() => setSavedOpen(true)}>
       <SavedButton open={open}>
         <StyledIcon>
-          <Bookmark size={20} />
+          {/* <Bookmark size={20} /> */}
         </StyledIcon>
       </SavedButton>
     </RightColumn>

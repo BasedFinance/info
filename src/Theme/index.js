@@ -24,9 +24,9 @@ const theme = (darkMode, color) => ({
   shadowColor: darkMode ? '#000' : '#2F80ED',
   mercuryGray: darkMode ? '#333333' : '#E1E1E1',
 
-  text1: darkMode ? '#FAFAFA' : '#1F1F1F',
-  text2: darkMode ? '#C3C5CB' : '#565A69',
-  text3: darkMode ? '#6C7284' : '#888D9B',
+  text1: darkMode ? '#FAFAFA' : '#1F1F1F', //Titles
+  text2: darkMode ? '#C3C5CB' : '#565A69', //Questions
+  text3: darkMode ? '#6C7284' : '#888D9B', //Search
   text4: darkMode ? '#565A69' : '#C3C5CB',
   text5: darkMode ? '#2C2F36' : '#EDEEF2',
 
@@ -69,8 +69,8 @@ const theme = (darkMode, color) => ({
   green1: '#27AE60',
   yellow1: '#FFE270',
   yellow2: '#F3841E',
-  link: '#2172E5',
-  blue: '2f80ed',
+  link: '#A38372',
+  blue: '#A38372',
 
   background: darkMode ? 'black' : `radial-gradient(50% 50% at 50% 50%, #ff007a30 0%, #fff 0%)`,
 })
@@ -135,6 +135,26 @@ export const Link = styled.a.attrs({
   }
 `
 
+// export const ThemedBackground = styled.div`
+//   position: absolute;
+//   top: 0;
+//   left: 0;
+//   right: 0;
+//   pointer-events: none;
+//   max-width: 100vw !important;
+//   height: 200vh;
+//   mix-blend-mode: color;
+//   background: ${({ backgroundColor }) =>
+//     `radial-gradient(50% 50% at 50% 50%, ${backgroundColor} 0%, rgba(255, 255, 255, 0) 100%)`};
+//   position: absolute;
+//   top: 0px;
+//   left: 0px;
+//   /* z-index: ; */
+
+//   transform: translateY(-110vh);
+// `
+
+
 export const ThemedBackground = styled.div`
   position: absolute;
   top: 0;
@@ -144,8 +164,6 @@ export const ThemedBackground = styled.div`
   max-width: 100vw !important;
   height: 200vh;
   mix-blend-mode: color;
-  background: ${({ backgroundColor }) =>
-    `radial-gradient(50% 50% at 50% 50%, ${backgroundColor} 0%, rgba(255, 255, 255, 0) 100%)`};
   position: absolute;
   top: 0px;
   left: 0px;

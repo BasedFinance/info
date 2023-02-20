@@ -7,6 +7,7 @@ import Link from '../Link'
 import { RowFixed } from '../Row'
 import Logo from '../../assets/logo_white.svg'
 import Wordmark from '../../assets/wordmark_white.svg'
+import BasedSwap from '../../assets/BasedSwap.png'
 
 import { BasicLink } from '../Link'
 import { useMedia } from 'react-use'
@@ -48,50 +49,16 @@ export default function Title() {
       <Flex alignItems="center" style={{ justifyContent: 'space-between' }}>
         <RowFixed>
           <UniIcon id="link" onClick={() => history.push('/')}>
-            <img width={'24px'} src={Logo} alt="logo" />
+            <img width={'54px'} src={BasedSwap} alt="logo" />
           </UniIcon>
-          {!below1080 && (
+          {/* {!below1080 && (
             <img width={'84px'} style={{ marginLeft: '8px', marginTop: '0px' }} src={Wordmark} alt="logo" />
-          )}
+          )} */}
         </RowFixed>
         {below1080 && (
           <RowFixed style={{ alignItems: 'flex-end' }}>
             <BasicLink to="/home">
               <Option activeText={history.location.pathname === '/home' ?? undefined}>Overview</Option>
-            </BasicLink>
-            <BasicLink to="/tokens">
-              <Option
-                activeText={
-                  (history.location.pathname.split('/')[1] === 'tokens' ||
-                    history.location.pathname.split('/')[1] === 'token') ??
-                  undefined
-                }
-              >
-                Tokens
-              </Option>
-            </BasicLink>
-            <BasicLink to="/pairs">
-              <Option
-                activeText={
-                  (history.location.pathname.split('/')[1] === 'pairs' ||
-                    history.location.pathname.split('/')[1] === 'pair') ??
-                  undefined
-                }
-              >
-                Pairs
-              </Option>
-            </BasicLink>
-
-            <BasicLink to="/accounts">
-              <Option
-                activeText={
-                  (history.location.pathname.split('/')[1] === 'accounts' ||
-                    history.location.pathname.split('/')[1] === 'account') ??
-                  undefined
-                }
-              >
-                Accounts
-              </Option>
             </BasicLink>
           </RowFixed>
         )}

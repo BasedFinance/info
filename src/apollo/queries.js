@@ -298,75 +298,16 @@ export const USER_POSITIONS = gql`
   }
 `
 
-export const USER_TRANSACTIONS = gql`
-  query transactions($user: Bytes!) {
-    mints(orderBy: timestamp, orderDirection: desc, where: { to: $user }) {
-      id
-      transaction {
-        id
-        timestamp
-      }
-      pair {
-        id
-        token0 {
-          id
-          symbol
-        }
-        token1 {
-          id
-          symbol
-        }
-      }
-      to
-      liquidity
-      amount0
-      amount1
-      amountUSD
-    }
-    burns(orderBy: timestamp, orderDirection: desc, where: { sender: $user }) {
-      id
-      transaction {
-        id
-        timestamp
-      }
-      pair {
-        id
-        token0 {
-          symbol
-        }
-        token1 {
-          symbol
-        }
-      }
-      sender
-      to
-      liquidity
-      amount0
-      amount1
-      amountUSD
-    }
-    swaps(orderBy: timestamp, orderDirection: desc, where: { to: $user }) {
-      id
-      transaction {
-        id
-        timestamp
-      }
-      pair {
-        token0 {
-          symbol
-        }
-        token1 {
-          symbol
-        }
-      }
-      amount0In
-      amount0Out
-      amount1In
-      amount1Out
-      amountUSD
-      to
-    }
+export const GET_PAIRS = gql`
+query pairs{
+	pairMany{
+    pairAddress,
+    reserve0,
+    reserve1,
+    token0address,
+    token1address
   }
+}
 `
 
 export const PAIR_CHART = gql`
@@ -433,6 +374,19 @@ export const GLOBAL_CHART = gql`
   }
 `
 
+export const GLOBAL_CHART_2 = gql`
+query getDaysVolume($limit: Int!, $skip: Int!){
+  getDaysVolume(limit: $limit, skip: $skip){
+    _id
+		pairAddress
+    timeStamp
+    liquidityUSD
+    volume0USD
+    volume1USD
+  }
+}
+`
+
 export const GLOBAL_DATA = (block) => {
   const queryString = ` query uniswapFactories {
       uniswapFactories(
@@ -450,6 +404,42 @@ export const GLOBAL_DATA = (block) => {
     }`
   return gql(queryString)
 }
+
+export const GLOBAL_TXNS_BASED = gql`
+  query transactionMany($limit: Int!, $skip: Int!){
+    transactionMany(limit: $limit, skip: $skip){
+      pairAddress
+      timeStamp
+      blockNumber
+      amount0In
+      amount0Out
+      amount1In
+      amount1Out
+      to
+      sender
+      transactionHash
+      amountUSD
+    }
+  }
+`
+
+export const GLOBAL_TXNS_BASED_BY_PAIR = gql`
+  query getTxsByPair($pairAddress: String!,$limit: Int!, $skip: Int!){
+    getTxsByPair(pairAddress: $pairAddress, limit: $limit, skip: $skip){
+      pairAddress
+      timeStamp
+      blockNumber
+      amount0In
+      amount0Out
+      amount1In
+      amount1Out
+      to
+      sender
+      transactionHash
+      amountUSD
+    }
+  }
+`
 
 export const GLOBAL_TXNS = gql`
   query transactions {
@@ -651,23 +641,15 @@ const PairFields = `
 `
 
 export const PAIRS_CURRENT = gql`
-  query pairs {
-    pairs(first: 200, orderBy: reserveUSD, orderDirection: desc) {
-      id
+  query pairMany {
+    pairMany {
+      _id,
+      pairAddress
+      reserve0
+      reserve1
     }
   }
 `
-
-export const PAIR_DATA = (pairAddress, block) => {
-  const queryString = `
-    ${PairFields}
-    query pairs {
-      pairs(${block ? `block: {number: ${block}}` : ``} where: { id: "${pairAddress}"} ) {
-        ...PairFields
-      }
-    }`
-  return gql(queryString)
-}
 
 export const MINING_POSITIONS = (account) => {
   const queryString = `
@@ -700,6 +682,71 @@ export const PAIRS_BULK = gql`
       ...PairFields
     }
   }
+`
+
+export const PAIR_DATA= gql`
+  query getDaysVolume($pairAddress: String!, $limit: Int!, $skip: Int!){
+    getDaysVolume(pairAddress: $pairAddress, limit: $limit, skip: $skip){
+      _id
+      pairAddress
+      timeStamp
+      liquidityUSD
+      volume0USD
+      volume1USD
+      token0address
+      token1address
+    }
+  }
+`
+
+export const TOKEN_DATA= gql`
+query tokensMany{
+  tokensMany{
+    tokenAddress
+    symbol
+    decimals
+    priceInWFTM
+    priceInUSD
+    priceUSD
+  }
+}
+`
+
+
+export const TOKEN_PRICE_BY_DATE= gql`
+query getTokenPrircesByDate($tokenAddress: String!, $startTime: Int!, $endTime:Int!, $limit: Int!, $skip: Int!){
+  getTokenPrircesByDate( tokenAddress: $tokenAddress,startTime: $startTime, endTime: $endTime, limit: $limit, skip: $skip){
+		tokenAddress
+    priceInUSD
+    priceInWFTM
+    timeStamp
+    liquidityUSD
+  }
+}
+`
+
+export const VOLUMES_DATA_BY_DATE= gql`
+query getDaysVolumeByDate($startTime: Int!, $endTime:Int!, $limit: Int!, $skip: Int!){
+  getDaysVolumeByDate(startTime: $startTime, endTime: $endTime, limit: $limit, skip: $skip){
+		pairAddress
+    timeStamp
+    liquidityUSD
+    volume0USD
+    volume1USD
+  }
+}
+`
+
+export const PAIR_VOLUMES_DATA_BY_DATE= gql`
+query getPairDaysVolumeByDate($pairAddress: String!, $startTime: Int!, $endTime:Int!, $limit: Int!, $skip: Int!){
+  getPairDaysVolumeByDate( pairAddress: $pairAddress,startTime: $startTime, endTime: $endTime, limit: $limit, skip: $skip){
+		pairAddress
+    volume0USD
+    volume1USD
+		timeStamp
+    liquidityUSD
+  }
+}
 `
 
 export const PAIRS_HISTORICAL_BULK = (block, pairs) => {
@@ -762,6 +809,19 @@ export const TOKEN_TOP_DAY_DATAS = gql`
   }
 `
 
+// used for getting top tokens by daily volume
+export const HUITA = gql`
+query {
+  getPairs {
+    pairAddress
+    reserve0
+    reserve1
+    token0address
+    token1address
+  }
+}
+`
+
 export const TOKENS_BULK = gql`
   ${TokenFields}
   query tokens($tokenAddresses: [Bytes]!) {
@@ -815,23 +875,6 @@ export const TOKENS_DYNAMIC = (block) => {
   return gql(queryString)
 }
 
-export const TOKEN_DATA = (tokenAddress, block) => {
-  const queryString = `
-    ${TokenFields}
-    query tokens {
-      tokens(${block ? `block : {number: ${block}}` : ``} where: {id:"${tokenAddress}"}) {
-        ...TokenFields
-      }
-      pairs0: pairs(where: {token0: "${tokenAddress}"}, first: 50, orderBy: reserveUSD, orderDirection: desc){
-        id
-      }
-      pairs1: pairs(where: {token1: "${tokenAddress}"}, first: 50, orderBy: reserveUSD, orderDirection: desc){
-        id
-      }
-    }
-  `
-  return gql(queryString)
-}
 
 export const FILTERED_TRANSACTIONS = gql`
   query ($allPairs: [Bytes]!) {

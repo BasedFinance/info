@@ -9,7 +9,7 @@ import styled from 'styled-components'
 import { CustomLink } from '../Link'
 import { Divider } from '../../components'
 import { withRouter } from 'react-router-dom'
-import { formattedNum, formattedPercent } from '../../utils'
+import { formattedNum } from '../../utils'
 import DoubleTokenLogo from '../DoubleLogo'
 import FormattedName from '../FormattedName'
 import QuestionHelper from '../QuestionHelper'
@@ -131,7 +131,7 @@ const formatDataText = (value, trackedValue, supressWarning = false) => {
   const showUntracked = value !== '$0' && !trackedValue & !supressWarning
   return (
     <AutoColumn gap="2px" style={{ opacity: showUntracked ? '0.7' : '1' }}>
-      <div style={{ textAlign: 'right' }}>{value}</div>
+      <div style={{ textAlign: 'right' }}>{value.toFixed(2)}</div>
       <TYPE.light fontSize={'9px'} style={{ textAlign: 'right' }}>
         {showUntracked ? 'untracked' : '  '}
       </TYPE.light>
@@ -170,30 +170,14 @@ function PairList({ pairs, color, disbaleLinks, maxItems = 10, useTracked = fals
 
   const ListItem = ({ pairAddress, index }) => {
     const pairData = pairs[pairAddress]
-
-    if (pairData && pairData.token0 && pairData.token1) {
-      const liquidity = formattedNum(
-        !!pairData.trackedReserveUSD ? pairData.trackedReserveUSD : pairData.reserveUSD,
-        true
-      )
-
-      const volume = formattedNum(
-        pairData.oneDayVolumeUSD ? pairData.oneDayVolumeUSD : pairData.oneDayVolumeUntracked,
-        true
-      )
-
-      const apy = formattedPercent(
-        ((pairData.oneDayVolumeUSD ? pairData.oneDayVolumeUSD : pairData.oneDayVolumeUntracked) * 0.003 * 365 * 100) /
-          (pairData.oneDayVolumeUSD ? pairData.trackedReserveUSD : pairData.reserveUSD)
-      )
-
-      const weekVolume = formattedNum(
-        pairData.oneWeekVolumeUSD ? pairData.oneWeekVolumeUSD : pairData.oneWeekVolumeUntracked,
-        true
-      )
+    if (pairData && pairData.token0Info && pairData.token1Info) {
+      
+      const liquidity  =  Object.keys(pairData.liquidityUSDPerDay).length > 1 ? pairData.liquidityUSDPerDay[Object.keys(pairData.liquidityUSDPerDay).length - 1].liquidity : 0;
+      let volume = pairData.oneDayVolumeUSD;
+      let weekVolume = pairData.volumeWeek;
 
       const fees = formattedNum(
-        pairData.oneDayVolumeUSD ? pairData.oneDayVolumeUSD * 0.003 : pairData.oneDayVolumeUntracked * 0.003,
+        pairData.oneDayVolumeUSD ? pairData.oneDayVolumeUSD * 0.001 : pairData.oneDayVolumeUntracked * 0.001,
         true
       )
 
@@ -203,28 +187,23 @@ function PairList({ pairs, color, disbaleLinks, maxItems = 10, useTracked = fals
             {!below600 && <div style={{ marginRight: '20px', width: '10px' }}>{index}</div>}
             <DoubleTokenLogo
               size={below600 ? 16 : 20}
-              a0={pairData.token0.id}
-              a1={pairData.token1.id}
+              a0={pairData.token0Info.tokenAddress}
+              a1={pairData.token1Info.tokenAddress}
               margin={!below740}
             />
             <CustomLink style={{ marginLeft: '20px', whiteSpace: 'nowrap' }} to={'/pair/' + pairAddress} color={color}>
               <FormattedName
-                text={pairData.token0.symbol + '-' + pairData.token1.symbol}
+                text={pairData.token0Info.symbol === 'WFTM' ?  pairData.token1Info.symbol + '-' + pairData.token0Info.symbol  : pairData.token0Info.symbol + '-' + pairData.token1Info.symbol}
                 maxCharacters={below600 ? 8 : 16}
                 adjustSize={true}
                 link={true}
               />
             </CustomLink>
           </DataText>
-          <DataText area="liq">{formatDataText(liquidity, pairData.trackedReserveUSD)}</DataText>
-          <DataText area="vol">{formatDataText(volume, pairData.oneDayVolumeUSD)}</DataText>
-          {!below1080 && <DataText area="volWeek">{formatDataText(weekVolume, pairData.oneWeekVolumeUSD)}</DataText>}
-          {!below1080 && <DataText area="fees">{formatDataText(fees, pairData.oneDayVolumeUSD)}</DataText>}
-          {!below1080 && (
-            <DataText area="apy">
-              {formatDataText(apy, pairData.oneDayVolumeUSD, pairData.oneDayVolumeUSD === 0)}
-            </DataText>
-          )}
+          <DataText area="liq">{formatDataText(liquidity, pairData.liquidityUSDPerDay[Object.keys(pairData.liquidityUSDPerDay).length - 1].liquidity)}</DataText>
+          <DataText area="vol">{formatDataText(volume, pairData.volume0USDPerDay[Object.keys(pairData.volume0USDPerDay).length - 1].volume)}</DataText>
+          {!below1080 && <DataText area="volWeek">{formatDataText(weekVolume, weekVolume)}</DataText>}
+          {!below1080 && <DataText area="fees">{fees}</DataText>}
         </DashGrid>
       )
     } else {
@@ -236,7 +215,7 @@ function PairList({ pairs, color, disbaleLinks, maxItems = 10, useTracked = fals
     pairs &&
     Object.keys(pairs)
       .filter(
-        (address) => !PAIR_BLACKLIST.includes(address) && (useTracked ? !!pairs[address].trackedReserveUSD : true)
+        (address) => !PAIR_BLACKLIST.includes(address) //&& (useTracked ? !!pairs[address].trackedReserveUSD : true)
       )
       .sort((addressA, addressB) => {
         const pairA = pairs[addressA]
@@ -246,8 +225,8 @@ function PairList({ pairs, color, disbaleLinks, maxItems = 10, useTracked = fals
           const apy1 = parseFloat(pairB.oneDayVolumeUSD * 0.003 * 356 * 100) / parseFloat(pairB.reserveUSD)
           return apy0 > apy1 ? (sortDirection ? -1 : 1) * 1 : (sortDirection ? -1 : 1) * -1
         }
-        return parseFloat(pairA[FIELD_TO_VALUE(sortedColumn, useTracked)]) >
-          parseFloat(pairB[FIELD_TO_VALUE(sortedColumn, useTracked)])
+        return parseFloat(pairA[FIELD_TO_VALUE(sortedColumn, false)]) >
+          parseFloat(pairB[FIELD_TO_VALUE(sortedColumn, false)])
           ? (sortDirection ? -1 : 1) * 1
           : (sortDirection ? -1 : 1) * -1
       })
@@ -306,19 +285,6 @@ function PairList({ pairs, color, disbaleLinks, maxItems = 10, useTracked = fals
               }}
             >
               Volume (7d) {sortedColumn === SORT_FIELD.VOL_7DAYS ? (!sortDirection ? '↑' : '↓') : ''}
-            </ClickableText>
-          </Flex>
-        )}
-        {!below1080 && (
-          <Flex alignItems="center" justifyContent="flexEnd">
-            <ClickableText
-              area="fees"
-              onClick={(e) => {
-                setSortedColumn(SORT_FIELD.FEES)
-                setSortDirection(sortedColumn !== SORT_FIELD.FEES ? true : !sortDirection)
-              }}
-            >
-              Fees (24hr) {sortedColumn === SORT_FIELD.FEES ? (!sortDirection ? '↑' : '↓') : ''}
             </ClickableText>
           </Flex>
         )}

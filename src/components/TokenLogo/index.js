@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { isAddress } from '../../utils/index.js'
 import EthereumLogo from '../../assets/eth.png'
+import ObolLogo from '../../assets/tokens/obol.svg'
+import BshareLogo from '../../assets/tokens/bshare.svg'
+import FtmLogo from '../../assets/tokens/ftm.svg'
+import BasedLogo from '../../assets/tokens/based.svg'
+import UsdcLogo from '../../assets/tokens/usdc.svg'
+import TombLogo from '../../assets/tokens/tomb.svg'
+import SmeltLogo from '../../assets/tokens/smelt.svg'
+
 
 const BAD_IMAGES = {}
 
@@ -14,8 +22,8 @@ const Inline = styled.div`
 const Image = styled.img`
   width: ${({ size }) => size};
   height: ${({ size }) => size};
-  background-color: white;
-  border-radius: 50%;
+  // background-color: white;
+  border-radius: 20%;
   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.075);
 `
 
@@ -60,7 +68,7 @@ export default function TokenLogo({ address, header = false, size = '24px', ...r
     return (
       <StyledEthereumLogo size={size} {...rest}>
         <img
-          src={EthereumLogo}
+          src={BasedLogo}
           style={{
             boxShadow: '0px 6px 10px rgba(0, 0, 0, 0.075)',
             borderRadius: '24px',
@@ -71,16 +79,47 @@ export default function TokenLogo({ address, header = false, size = '24px', ...r
     )
   }
 
-  const path = `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${isAddress(
-    address
-  )}/logo.png`
+  // const path = `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${isAddress(
+  //   address
+  // )}/logo.png`
+  //   const path = `${images/isAddress(
+  //   address
+  // )}/.svg`
+
+
+  function getImagePath(address){
+    if( address === "0x49c290ff692149a4e16611c694fded42c954ab7a" ) {
+      return BshareLogo;
+    }
+    else if( address === "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83" ) {
+      return FtmLogo;
+    }
+    else if( address === "0x8d7d3409881b51466b483b11ea1b8a03cded89ae" ){
+      return BasedLogo;
+    }
+    else if( address === "0x141faa507855e56396eadbd25ec82656755cd61e") {
+      return SmeltLogo;
+    }
+    else if( address === "0x1539c63037d95f84a5981f96e43850d1451b6216" ) {
+      return ObolLogo;
+    }
+    else if( address === "0x04068da6c83afcfa0e13ba15a6696662335d5b75"){
+      return UsdcLogo;
+    }
+    else if( address === "0x6c021ae822bea943b2e66552bde1d2696a53fbb7"){
+      return TombLogo;
+    }
+    else if( address === "0x8d7d3409881b51466b483b11ea1b8a03cded89ae"){
+      return BasedLogo;
+    }
+  }
 
   return (
     <Inline>
       <Image
         {...rest}
         alt={''}
-        src={path}
+        src={getImagePath(address)}
         size={size}
         onError={(event) => {
           BAD_IMAGES[address] = true

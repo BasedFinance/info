@@ -129,7 +129,7 @@ const TradingViewChart = ({
       var series =
         type === CHART_TYPES.BAR
           ? chart.addHistogramSeries({
-              color: '#ff007a',
+              color: 'rgba(189, 151, 132,0.74)',
               priceFormat: {
                 type: 'volume',
               },
@@ -137,13 +137,13 @@ const TradingViewChart = ({
                 top: 0.32,
                 bottom: 0,
               },
-              lineColor: '#ff007a',
+              lineColor: 'rgba(255, 255, 122,1)',
               lineWidth: 3,
             })
           : chart.addAreaSeries({
-              topColor: '#ff007a',
-              bottomColor: 'rgba(255, 0, 122, 0)',
-              lineColor: '#ff007a',
+              topColor: 'rgba(189, 151, 132,0.74)',
+              bottomColor: 'rgba(192, 157, 122, 0)',
+              lineColor: 'rgba(189, 151, 132,0.74)',
               lineWidth: 3,
             })
 
@@ -171,7 +171,7 @@ const TradingViewChart = ({
           }</div>` +
           `<div style="font-size: 22px; margin: 4px 0px; color:${textColor}" >` +
           formattedNum(base ?? 0, true) +
-          `<span style="margin-left: 10px; font-size: 16px; color: ${color};">${formattedPercentChange}</span>` +
+          `<span style="margin-left: 10px; display: none; font-size: 16px; color: ${color};">${formattedPercentChange}</span>` +
           '</div>'
       }
       setLastBarText()

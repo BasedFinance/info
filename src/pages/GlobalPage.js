@@ -10,21 +10,18 @@ import TopTokenList from '../components/TokenList'
 import TxnList from '../components/TxnList'
 import GlobalChart from '../components/GlobalChart'
 import Search from '../components/Search'
-import GlobalStats from '../components/GlobalStats'
 
 import { useGlobalData, useGlobalTransactions } from '../contexts/GlobalData'
 import { useAllPairData } from '../contexts/PairData'
 import { useMedia } from 'react-use'
 import Panel from '../components/Panel'
 import { useAllTokenData } from '../contexts/TokenData'
-import { formattedNum, formattedPercent } from '../utils'
+import { formattedNum } from '../utils'
 import { TYPE, ThemedBackground } from '../Theme'
 import { transparentize } from 'polished'
 import { CustomLink } from '../components/Link'
 
 import { PageWrapper, ContentWrapper } from '../components'
-import CheckBox from '../components/Checkbox'
-import QuestionHelper from '../components/QuestionHelper'
 
 const ListOptions = styled(AutoRow)`
   height: 40px;
@@ -51,7 +48,7 @@ function GlobalPage() {
   const allPairs = useAllPairData()
   const allTokens = useAllTokenData()
   const transactions = useGlobalTransactions()
-  const { totalLiquidityUSD, oneDayVolumeUSD, volumeChangeUSD, liquidityChangeUSD } = useGlobalData()
+  const { totalLiquidityUSD, oneDayVolumeUSD, volumeChangeUSD, liquidityChangeUSD } = useGlobalData(allPairs)
 
   // breakpoints
   const below800 = useMedia('(max-width: 800px)')
@@ -72,10 +69,10 @@ function GlobalPage() {
       <ThemedBackground backgroundColor={transparentize(0.6, '#ff007a')} />
       <ContentWrapper>
         <div>
-          <AutoColumn gap="24px" style={{ paddingBottom: below800 ? '0' : '24px' }}>
-            <TYPE.largeHeader>{below800 ? 'Uniswap Analytics' : 'Uniswap Analytics'}</TYPE.largeHeader>
+          <AutoColumn gap="24px" style={{ paddingBottom: below800 ? '10px' : '24px' }}>
+            <TYPE.largeHeader>{below800 ? 'BasedDex Analytics' : 'BasedDex Analytics'}</TYPE.largeHeader>
             <Search />
-            <GlobalStats />
+            {/* <GlobalStats /> */}
           </AutoColumn>
           {below800 && ( // mobile card
             <Box mb={20}>
@@ -91,7 +88,6 @@ function GlobalPage() {
                         <TYPE.main fontSize={'1.5rem'} lineHeight={1} fontWeight={600}>
                           {oneDayVolumeUSD ? formattedNum(oneDayVolumeUSD, true) : '-'}
                         </TYPE.main>
-                        <TYPE.main fontSize={12}>{volumeChangeUSD ? formattedPercent(volumeChangeUSD) : '-'}</TYPE.main>
                       </RowBetween>
                     </AutoColumn>
                     <AutoColumn gap="20px">
@@ -102,9 +98,6 @@ function GlobalPage() {
                       <RowBetween align="flex-end">
                         <TYPE.main fontSize={'1.5rem'} lineHeight={1} fontWeight={600}>
                           {totalLiquidityUSD ? formattedNum(totalLiquidityUSD, true) : '-'}
-                        </TYPE.main>
-                        <TYPE.main fontSize={12}>
-                          {liquidityChangeUSD ? formattedPercent(liquidityChangeUSD) : '-'}
                         </TYPE.main>
                       </RowBetween>
                     </AutoColumn>
@@ -130,6 +123,20 @@ function GlobalPage() {
               </Panel>
             </AutoColumn>
           )}
+
+          <ListOptions gap="10px" style={{ marginTop: '2rem', marginBottom: '.5rem' }}>
+            <RowBetween>
+              <TYPE.main fontSize={'1rem'} style={{ whiteSpace: 'nowrap' }}>
+                Top Pairs
+              </TYPE.main>
+              <AutoRow gap="4px" width="100%" justifyContent="flex-end">
+                <CustomLink to={'/pairs'}>See All</CustomLink>
+              </AutoRow>
+            </RowBetween>
+          </ListOptions>
+          <Panel style={{ marginTop: '6px', padding: '1.125rem 0 ' }}>
+            <PairList pairs={allPairs} useTracked={useTracked} />
+          </Panel>
           <ListOptions gap="10px" style={{ marginTop: '2rem', marginBottom: '.5rem' }}>
             <RowBetween>
               <TYPE.main fontSize={'1.125rem'} style={{ whiteSpace: 'nowrap' }}>
@@ -140,25 +147,6 @@ function GlobalPage() {
           </ListOptions>
           <Panel style={{ marginTop: '6px', padding: '1.125rem 0 ' }}>
             <TopTokenList tokens={allTokens} />
-          </Panel>
-          <ListOptions gap="10px" style={{ marginTop: '2rem', marginBottom: '.5rem' }}>
-            <RowBetween>
-              <TYPE.main fontSize={'1rem'} style={{ whiteSpace: 'nowrap' }}>
-                Top Pairs
-              </TYPE.main>
-              <AutoRow gap="4px" width="100%" justifyContent="flex-end">
-                <CheckBox
-                  checked={useTracked}
-                  setChecked={() => setUseTracked(!useTracked)}
-                  text={'Hide untracked pairs'}
-                />
-                <QuestionHelper text="USD amounts may be inaccurate in low liquiidty pairs or pairs without ETH or stablecoins." />
-                <CustomLink to={'/pairs'}>See All</CustomLink>
-              </AutoRow>
-            </RowBetween>
-          </ListOptions>
-          <Panel style={{ marginTop: '6px', padding: '1.125rem 0 ' }}>
-            <PairList pairs={allPairs} useTracked={useTracked} />
           </Panel>
           <span>
             <TYPE.main fontSize={'1.125rem'} style={{ marginTop: '2rem' }}>

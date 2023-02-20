@@ -25,7 +25,7 @@ export const TOKEN_BLACKLIST = [
   '0xfc989fbb6b3024de5ca0144dc23c18a063942ac1',
   '0xf4eda77f0b455a12f3eb44f8653835f377e36b76',
   '0x93b2fff814fcaeffb01406e80b4ecd89ca6a021b',
-
+  '0x6c021ae822bea943b2e66552bde1d2696a53fbb7',
   // rebass tokens
   '0x9ea3b5b4ec044b70375236a281986106457b20ef',
   '0x05934eba98486693aaec2d00b0e9ce918e37dc3f',

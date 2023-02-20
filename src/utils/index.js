@@ -3,13 +3,12 @@ import { BigNumber } from 'bignumber.js'
 import dayjs from 'dayjs'
 import { ethers } from 'ethers'
 import utc from 'dayjs/plugin/utc'
-import { client, blockClient } from '../apollo/client'
-import { GET_BLOCK, GET_BLOCKS, SHARE_VALUE } from '../apollo/queries'
 import { Text } from 'rebass'
 import _Decimal from 'decimal.js-light'
 import toFormat from 'toformat'
 import { timeframeOptions } from '../constants'
 import Numeral from 'numeral'
+
 
 // format libraries
 const Decimal = toFormat(_Decimal)
@@ -38,31 +37,13 @@ export function getTimeframe(timeWindow) {
 }
 
 export function getPoolLink(token0Address, token1Address = null, remove = false) {
-  if (!token1Address) {
-    return (
-      `https://app.uniswap.org/#/` +
-      (remove ? `remove` : `add`) +
-      `/v2/${token0Address === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' ? 'ETH' : token0Address}/${'ETH'}`
-    )
-  } else {
-    return (
-      `https://app.uniswap.org/#/` +
-      (remove ? `remove` : `add`) +
-      `/v2/${token0Address === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' ? 'ETH' : token0Address}/${
-        token1Address === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' ? 'ETH' : token1Address
-      }`
-    )
-  }
+  return `https://next-gen.basedfinance.io/dex/add/${token1Address
+}/${token0Address}`
 }
 
 export function getSwapLink(token0Address, token1Address = null) {
-  if (!token1Address) {
-    return `https://app.uniswap.org/#/swap?inputCurrency=${token0Address}`
-  } else {
-    return `https://app.uniswap.org/#/swap?inputCurrency=${
-      token0Address === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' ? 'ETH' : token0Address
-    }&outputCurrency=${token1Address === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' ? 'ETH' : token1Address}`
-  }
+  return `https://next-gen.basedfinance.io/dex/swap/${token1Address
+  }/${token0Address}`
 }
 
 export function getMiningPoolLink(token0Address) {
@@ -149,15 +130,7 @@ export async function splitQuery(query, localClient, vars, list, skipCount = 100
  * @param {Int} timestamp in seconds
  */
 export async function getBlockFromTimestamp(timestamp) {
-  let result = await blockClient.query({
-    query: GET_BLOCK,
-    variables: {
-      timestampFrom: timestamp,
-      timestampTo: timestamp + 600,
-    },
-    fetchPolicy: 'cache-first',
-  })
-  return result?.data?.blocks?.[0]?.number
+  return 0;
 }
 
 /**
@@ -168,47 +141,8 @@ export async function getBlockFromTimestamp(timestamp) {
  * @param {Array} timestamps
  */
 export async function getBlocksFromTimestamps(timestamps, skipCount = 500) {
-  if (timestamps?.length === 0) {
-    return []
-  }
-
-  let fetchedData = await splitQuery(GET_BLOCKS, blockClient, [], timestamps, skipCount)
-
-  let blocks = []
-  if (fetchedData) {
-    for (var t in fetchedData) {
-      if (fetchedData[t].length > 0) {
-        blocks.push({
-          timestamp: t.split('t')[1],
-          number: fetchedData[t][0]['number'],
-        })
-      }
-    }
-  }
-  return blocks
+ return []
 }
-
-// export async function getLiquidityTokenBalanceOvertime(account, timestamps) {
-//   // get blocks based on timestamps
-//   const blocks = await getBlocksFromTimestamps(timestamps)
-
-//   // get historical share values with time travel queries
-//   let result = await client.query({
-//     query: SHARE_VALUE(account, blocks),
-//     fetchPolicy: 'cache-first',
-//   })
-
-//   let values = []
-//   for (var row in result?.data) {
-//     let timestamp = row.split('t')[1]
-//     if (timestamp) {
-//       values.push({
-//         timestamp,
-//         balance: 0,
-//       })
-//     }
-//   }
-// }
 
 /**
  * @notice Example query using time travel queries
@@ -217,56 +151,7 @@ export async function getBlocksFromTimestamps(timestamps, skipCount = 500) {
  * @param {Array} timestamps
  */
 export async function getShareValueOverTime(pairAddress, timestamps) {
-  if (!timestamps) {
-    const utcCurrentTime = dayjs()
-    const utcSevenDaysBack = utcCurrentTime.subtract(8, 'day').unix()
-    timestamps = getTimestampRange(utcSevenDaysBack, 86400, 7)
-  }
-
-  // get blocks based on timestamps
-  const blocks = await getBlocksFromTimestamps(timestamps)
-
-  // get historical share values with time travel queries
-  let result = await client.query({
-    query: SHARE_VALUE(pairAddress, blocks),
-    fetchPolicy: 'cache-first',
-  })
-
-  let values = []
-  for (var row in result?.data) {
-    let timestamp = row.split('t')[1]
-    let sharePriceUsd = parseFloat(result.data[row]?.reserveUSD) / parseFloat(result.data[row]?.totalSupply)
-    if (timestamp) {
-      values.push({
-        timestamp,
-        sharePriceUsd,
-        totalSupply: result.data[row].totalSupply,
-        reserve0: result.data[row].reserve0,
-        reserve1: result.data[row].reserve1,
-        reserveUSD: result.data[row].reserveUSD,
-        token0DerivedETH: result.data[row].token0.derivedETH,
-        token1DerivedETH: result.data[row].token1.derivedETH,
-        roiUsd: values && values[0] ? sharePriceUsd / values[0]['sharePriceUsd'] : 1,
-        ethPrice: 0,
-        token0PriceUSD: 0,
-        token1PriceUSD: 0,
-      })
-    }
-  }
-
-  // add eth prices
-  let index = 0
-  for (var brow in result?.data) {
-    let timestamp = brow.split('b')[1]
-    if (timestamp) {
-      values[index].ethPrice = result.data[brow].ethPrice
-      values[index].token0PriceUSD = result.data[brow].ethPrice * values[index].token0DerivedETH
-      values[index].token1PriceUSD = result.data[brow].ethPrice * values[index].token1DerivedETH
-      index += 1
-    }
-  }
-
-  return values
+  return []
 }
 
 /**
@@ -303,7 +188,7 @@ export const setThemeColor = (theme) => document.documentElement.style.setProper
 export const Big = (number) => new BigNumber(number)
 
 export const urls = {
-  showTransaction: (tx) => `https://etherscan.io/tx/${tx}/`,
+  showTransaction: (tx) => `https://ftmscan.com/tx/${tx}/`,
   showAddress: (address) => `https://www.etherscan.io/address/${address}/`,
   showToken: (address) => `https://www.etherscan.io/token/${address}/`,
   showBlock: (block) => `https://etherscan.io/block/${block}/`,

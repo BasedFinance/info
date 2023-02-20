@@ -1,6 +1,6 @@
 {
-  "short_name": "Uniswap Info",
-  "name": "View statistics for Uniswap exchanges.",
+  "short_name": "BasedDex Analytics",
+  "name": "View statistics for BasedDex exchanges.",
   "icons": [
     {
       "src": "favicon.ico",

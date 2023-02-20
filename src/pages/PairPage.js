@@ -3,10 +3,10 @@ import { withRouter } from 'react-router-dom'
 import 'feather-icons'
 import styled from 'styled-components'
 import Panel from '../components/Panel'
+
 import {
   PageWrapper,
   ContentWrapperLarge,
-  StyledIcon,
   BlockedWrapper,
   BlockedMessageWrapper,
 } from '../components/index'
@@ -18,9 +18,7 @@ import Link from '../components/Link'
 import TxnList from '../components/TxnList'
 import Loader from '../components/LocalLoader'
 import { BasicLink } from '../components/Link'
-import Search from '../components/Search'
 import { formattedNum, formattedPercent, getPoolLink, getSwapLink, shortenAddress } from '../utils'
-import { useColor } from '../hooks'
 import { usePairData, usePairTransactions } from '../contexts/PairData'
 import { TYPE, ThemedBackground } from '../Theme'
 import { transparentize } from 'polished'
@@ -28,16 +26,13 @@ import CopyHelper from '../components/Copy'
 import { useMedia } from 'react-use'
 import DoubleTokenLogo from '../components/DoubleLogo'
 import TokenLogo from '../components/TokenLogo'
-import { Hover } from '../components'
 import { useEthPrice } from '../contexts/GlobalData'
-import Warning from '../components/Warning'
 import { usePathDismissed, useSavedPairs } from '../contexts/LocalStorage'
 
-import { Bookmark, PlusCircle, AlertCircle } from 'react-feather'
+import {  AlertCircle } from 'react-feather'
 import FormattedName from '../components/FormattedName'
 import { useListedTokens } from '../contexts/Application'
-import HoverText from '../components/HoverText'
-import { UNTRACKED_COPY, PAIR_BLACKLIST, BLOCKED_WARNINGS } from '../constants'
+import {  PAIR_BLACKLIST, BLOCKED_WARNINGS } from '../constants'
 
 const DashboardWrapper = styled.div`
   width: 100%;
@@ -123,8 +118,8 @@ const WarningGrouping = styled.div`
 
 function PairPage({ pairAddress, history }) {
   const {
-    token0,
-    token1,
+    token0Info,
+    token1Info,
     reserve0,
     reserve1,
     reserveUSD,
@@ -135,13 +130,13 @@ function PairPage({ pairAddress, history }) {
     volumeChangeUntracked,
     liquidityChangeUSD,
   } = usePairData(pairAddress)
-
+  
   useEffect(() => {
     document.querySelector('body').scrollTo(0, 0)
   }, [])
 
   const transactions = usePairTransactions(pairAddress)
-  const backgroundColor = useColor(pairAddress)
+  const backgroundColor = "#BD9784"
 
   const formattedLiquidity = reserveUSD ? formattedNum(reserveUSD, true) : formattedNum(trackedReserveUSD, true)
   const usingUntrackedLiquidity = !trackedReserveUSD && !!reserveUSD
@@ -158,25 +153,31 @@ function PairPage({ pairAddress, history }) {
   const fees =
     oneDayVolumeUSD || oneDayVolumeUSD === 0
       ? usingUtVolume
-        ? formattedNum(oneDayVolumeUntracked * 0.003, true)
-        : formattedNum(oneDayVolumeUSD * 0.003, true)
+        ? formattedNum(oneDayVolumeUntracked * 0.001, true)
+        : formattedNum(oneDayVolumeUSD * 0.001, true)
       : '-'
 
   // token data for usd
   const [ethPrice] = useEthPrice()
-  const token0USD =
-    token0?.derivedETH && ethPrice ? formattedNum(parseFloat(token0.derivedETH) * parseFloat(ethPrice), true) : ''
+  // const token0USD =
+  //   token0?.derivedETH && ethPrice ? formattedNum(parseFloat(token0.derivedETH) * parseFloat(ethPrice), true) : ''
+
+  // const token1USD =
+  //   token1?.derivedETH && ethPrice ? formattedNum(parseFloat(token1.derivedETH) * parseFloat(ethPrice), true) : ''
+
+    const token0USD =
+    token0Info?.derivedETH && ethPrice ? formattedNum(parseFloat(token0Info.derivedETH) * parseFloat(ethPrice), true) : ''
 
   const token1USD =
-    token1?.derivedETH && ethPrice ? formattedNum(parseFloat(token1.derivedETH) * parseFloat(ethPrice), true) : ''
+  token1Info?.derivedETH && ethPrice ? formattedNum(parseFloat(token1Info.derivedETH) * parseFloat(ethPrice), true) : ''
 
   // rates
   const token0Rate = reserve0 && reserve1 ? formattedNum(reserve1 / reserve0) : '-'
   const token1Rate = reserve0 && reserve1 ? formattedNum(reserve0 / reserve1) : '-'
 
   // formatted symbols for overflow
-  const formattedSymbol0 = token0?.symbol.length > 6 ? token0?.symbol.slice(0, 5) + '...' : token0?.symbol
-  const formattedSymbol1 = token1?.symbol.length > 6 ? token1?.symbol.slice(0, 5) + '...' : token1?.symbol
+  const formattedSymbol0 = token0Info?.symbol.length > 6 ? token0Info?.symbol.slice(0, 5) + '...' : token0Info?.symbol
+  const formattedSymbol1 = token0Info?.symbol.length > 6 ? token0Info?.symbol.slice(0, 5) + '...' : token0Info?.symbol
 
   const below1080 = useMedia('(max-width: 1080px)')
   const below900 = useMedia('(max-width: 900px)')
@@ -203,7 +204,7 @@ function PairPage({ pairAddress, history }) {
             <TYPE.light style={{ textAlign: 'center' }}>
               {BLOCKED_WARNINGS[pairAddress] ?? `This pair is not supported.`}
             </TYPE.light>
-            <Link external={true} href={'https://etherscan.io/address/' + pairAddress}>{`More about ${shortenAddress(
+            <Link external={true} href={'https://ftmscan.com/address/' + pairAddress}>{`More about ${shortenAddress(
               pairAddress
             )}`}</Link>
           </AutoColumn>
@@ -216,24 +217,23 @@ function PairPage({ pairAddress, history }) {
     <PageWrapper>
       <ThemedBackground backgroundColor={transparentize(0.6, backgroundColor)} />
       <span />
-      <Warning
+      {/* <Warning
         type={'pair'}
         show={!dismissed && listedTokens && !(listedTokens.includes(token0?.id) && listedTokens.includes(token1?.id))}
         setShow={markAsDismissed}
         address={pairAddress}
-      />
+      /> */}
       <ContentWrapperLarge>
         <RowBetween>
           <TYPE.body>
-            <BasicLink to="/pairs">{'Pairs '}</BasicLink>→ {token0?.symbol}-{token1?.symbol}
+            <BasicLink to="/pairs">{'Pairs '}</BasicLink>→ {token0Info?.symbol}-{token1Info?.symbol}
           </TYPE.body>
-          {!below600 && <Search small={true} />}
         </RowBetween>
-        <WarningGrouping
+        {/* <WarningGrouping
           disabled={
             !dismissed && listedTokens && !(listedTokens.includes(token0?.id) && listedTokens.includes(token1?.id))
           }
-        >
+        > */}
           <DashboardWrapper>
             <AutoColumn gap="40px" style={{ marginBottom: '1.5rem' }}>
               <div
@@ -246,16 +246,16 @@ function PairPage({ pairAddress, history }) {
               >
                 <RowFixed style={{ flexWrap: 'wrap', minWidth: '100px' }}>
                   <RowFixed>
-                    {token0 && token1 && (
-                      <DoubleTokenLogo a0={token0?.id || ''} a1={token1?.id || ''} size={32} margin={true} />
+                    {token0Info && token1Info && (
+                      <DoubleTokenLogo a0={token0Info?.tokenAddress || ''} a1={token1Info?.tokenAddress || ''} size={32} margin={true} />
                     )}{' '}
                     <TYPE.main fontSize={below1080 ? '1.5rem' : '2rem'} style={{ margin: '0 1rem' }}>
-                      {token0 && token1 ? (
+                      {token0Info && token1Info ? (
                         <>
-                          <HoverSpan onClick={() => history.push(`/token/${token0?.id}`)}>{token0.symbol}</HoverSpan>
+                          <HoverSpan onClick={() => history.push(`/token/${token0Info?.tokenAddress}`)}>{token0Info.symbol}</HoverSpan>
                           <span>-</span>
-                          <HoverSpan onClick={() => history.push(`/token/${token1?.id}`)}>
-                            {token1.symbol}
+                          <HoverSpan onClick={() => history.push(`/token/${token1Info?.tokenAddress}`)}>
+                            {token1Info.symbol}
                           </HoverSpan>{' '}
                           Pair
                         </>
@@ -272,24 +272,10 @@ function PairPage({ pairAddress, history }) {
                     flexDirection: below1080 ? 'row-reverse' : 'initial',
                   }}
                 >
-                  {!!!savedPairs[pairAddress] && !below1080 ? (
-                    <Hover onClick={() => addPair(pairAddress, token0.id, token1.id, token0.symbol, token1.symbol)}>
-                      <StyledIcon>
-                        <PlusCircle style={{ marginRight: '0.5rem' }} />
-                      </StyledIcon>
-                    </Hover>
-                  ) : !below1080 ? (
-                    <StyledIcon>
-                      <Bookmark style={{ marginRight: '0.5rem', opacity: 0.4 }} />
-                    </StyledIcon>
-                  ) : (
-                    <></>
-                  )}
-
-                  <Link external href={getPoolLink(token0?.id, token1?.id)}>
+                  <Link external href={getPoolLink(token0Info?.tokenAddress, token1Info?.tokenAddress)}>
                     <ButtonLight color={backgroundColor}>+ Add Liquidity</ButtonLight>
                   </Link>
-                  <Link external href={getSwapLink(token0?.id, token1?.id)}>
+                  <Link external href={getSwapLink(token0Info?.tokenAddress, token1Info?.tokenAddress)}>
                     <ButtonDark ml={!below1080 && '.5rem'} mr={below1080 && '.5rem'} color={backgroundColor}>
                       Trade
                     </ButtonDark>
@@ -306,30 +292,6 @@ function PairPage({ pairAddress, history }) {
                 flexWrap: 'wrap',
               }}
             >
-              <FixedPanel onClick={() => history.push(`/token/${token0?.id}`)}>
-                <RowFixed>
-                  <TokenLogo address={token0?.id} size={'16px'} />
-                  <TYPE.main fontSize={'16px'} lineHeight={1} fontWeight={500} ml={'4px'}>
-                    {token0 && token1
-                      ? `1 ${formattedSymbol0} = ${token0Rate} ${formattedSymbol1} ${
-                          parseFloat(token0?.derivedETH) ? '(' + token0USD + ')' : ''
-                        }`
-                      : '-'}
-                  </TYPE.main>
-                </RowFixed>
-              </FixedPanel>
-              <FixedPanel onClick={() => history.push(`/token/${token1?.id}`)}>
-                <RowFixed>
-                  <TokenLogo address={token1?.id} size={'16px'} />
-                  <TYPE.main fontSize={'16px'} lineHeight={1} fontWeight={500} ml={'4px'}>
-                    {token0 && token1
-                      ? `1 ${formattedSymbol1} = ${token1Rate} ${formattedSymbol0}  ${
-                          parseFloat(token1?.derivedETH) ? '(' + token1USD + ')' : ''
-                        }`
-                      : '-'}
-                  </TYPE.main>
-                </RowFixed>
-              </FixedPanel>
             </AutoRow>
             <>
               {!below1080 && (
@@ -338,9 +300,10 @@ function PairPage({ pairAddress, history }) {
                     Pair Stats
                   </TYPE.main>
                   {showUSDWaning ? (
-                    <HoverText text={UNTRACKED_COPY}>
-                      <WarningIcon />
-                    </HoverText>
+                    <></>
+                    // <HoverText text={UNTRACKED_COPY}>
+                    //   <WarningIcon />
+                    // </HoverText>
                   ) : null}
                 </RowFixed>
               )}
@@ -393,28 +356,25 @@ function PairPage({ pairAddress, history }) {
                       <TYPE.main>Pooled Tokens</TYPE.main>
                       <div />
                     </RowBetween>
-                    <Hover onClick={() => history.push(`/token/${token0?.id}`)} fade={true}>
+                    {/* () => history.push(`/token/${token0Info?.tokenAddress}`) */}
                       <AutoRow gap="4px">
-                        <TokenLogo address={token0?.id} />
+                        <TokenLogo address={token0Info?.tokenAddress} />
                         <TYPE.main fontSize={20} lineHeight={1} fontWeight={500}>
                           <RowFixed>
                             {reserve0 ? formattedNum(reserve0) : ''}{' '}
-                            <FormattedName text={token0?.symbol ?? ''} maxCharacters={8} margin={true} />
+                            <FormattedName text={token0Info?.symbol ?? ''} maxCharacters={8} margin={true} />
                           </RowFixed>
                         </TYPE.main>
                       </AutoRow>
-                    </Hover>
-                    <Hover onClick={() => history.push(`/token/${token1?.id}`)} fade={true}>
                       <AutoRow gap="4px">
-                        <TokenLogo address={token1?.id} />
+                        <TokenLogo address={token1Info?.tokenAddress} />
                         <TYPE.main fontSize={20} lineHeight={1} fontWeight={500}>
                           <RowFixed>
                             {reserve1 ? formattedNum(reserve1) : ''}{' '}
-                            <FormattedName text={token1?.symbol ?? ''} maxCharacters={8} margin={true} />
+                            <FormattedName text={token1Info?.symbol ?? ''} maxCharacters={8} margin={true} />
                           </RowFixed>
                         </TYPE.main>
                       </AutoRow>
-                    </Hover>
                   </AutoColumn>
                 </Panel>
                 <Panel
@@ -456,9 +416,9 @@ function PairPage({ pairAddress, history }) {
                     <TYPE.main>Pair Name</TYPE.main>
                     <TYPE.main style={{ marginTop: '.5rem' }}>
                       <RowFixed>
-                        <FormattedName text={token0?.symbol ?? ''} maxCharacters={8} />
+                        <FormattedName text={token0Info?.symbol ?? ''} maxCharacters={8} />
                         -
-                        <FormattedName text={token1?.symbol ?? ''} maxCharacters={8} />
+                        <FormattedName text={token1Info?.symbol ?? ''} maxCharacters={8} />
                       </RowFixed>
                     </TYPE.main>
                   </Column>
@@ -474,41 +434,41 @@ function PairPage({ pairAddress, history }) {
                   <Column>
                     <TYPE.main>
                       <RowFixed>
-                        <FormattedName text={token0?.symbol ?? ''} maxCharacters={8} />{' '}
+                        <FormattedName text={token0Info?.symbol ?? ''} maxCharacters={8} />{' '}
                         <span style={{ marginLeft: '4px' }}>Address</span>
                       </RowFixed>
                     </TYPE.main>
                     <AutoRow align="flex-end">
                       <TYPE.main style={{ marginTop: '.5rem' }}>
-                        {token0 && token0.id.slice(0, 6) + '...' + token0.id.slice(38, 42)}
+                        {token0Info && token0Info.tokenAddress.slice(0, 6) + '...' + token0Info.tokenAddress.slice(38, 42)}
                       </TYPE.main>
-                      <CopyHelper toCopy={token0?.id} />
+                      <CopyHelper toCopy={token0Info?.tokenAddress} />
                     </AutoRow>
                   </Column>
                   <Column>
                     <TYPE.main>
                       <RowFixed>
-                        <FormattedName text={token1?.symbol ?? ''} maxCharacters={8} />{' '}
+                        <FormattedName text={token1Info?.symbol ?? ''} maxCharacters={8} />{' '}
                         <span style={{ marginLeft: '4px' }}>Address</span>
                       </RowFixed>
                     </TYPE.main>
                     <AutoRow align="flex-end">
                       <TYPE.main style={{ marginTop: '.5rem' }} fontSize={16}>
-                        {token1 && token1.id.slice(0, 6) + '...' + token1.id.slice(38, 42)}
+                        {token1Info && token1Info.tokenAddress.slice(0, 6) + '...' + token1Info.tokenAddress.slice(38, 42)}
                       </TYPE.main>
-                      <CopyHelper toCopy={token1?.id} />
+                      <CopyHelper toCopy={token1Info?.tokenAddress} />
                     </AutoRow>
                   </Column>
                   <ButtonLight color={backgroundColor}>
-                    <Link color={backgroundColor} external href={'https://etherscan.io/address/' + pairAddress}>
-                      View on Etherscan ↗
+                    <Link color={backgroundColor} external href={'https://ftmscan.com/address/' + pairAddress}>
+                      View on FTMScan ↗
                     </Link>
                   </ButtonLight>
                 </TokenDetailsLayout>
               </Panel>
             </>
           </DashboardWrapper>
-        </WarningGrouping>
+        {/* </WarningGrouping> */}
       </ContentWrapperLarge>
     </PageWrapper>
   )

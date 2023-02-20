@@ -1,5 +1,5 @@
 import { USER_MINTS_BUNRS_PER_PAIR } from '../apollo/queries'
-import { client } from '../apollo/client'
+import { testClient } from '../apollo/client'
 import dayjs from 'dayjs'
 import { getShareValueOverTime } from '.'
 
@@ -7,6 +7,10 @@ export const priceOverrides = [
   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
   '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI
 ]
+
+interface VolumeData 
+{id: number, date: number, totalVolumeUSD: number, dailyVolumeUSD: number, dailyVolumeETH: number,
+  totalLiquidityUSD: number, totalLiquidityETH: number}
 
 interface ReturnMetrics {
   hodleReturn: number // difference in asset values t0 -> t1 with t0 deposit amounts
@@ -50,53 +54,53 @@ function formatPricesForEarlyTimestamps(position): Position {
 }
 
 async function getPrincipalForUserPerPair(user: string, pairAddress: string) {
-  let usd = 0
-  let amount0 = 0
-  let amount1 = 0
-  // get all minst and burns to get principal amounts
-  const results = await client.query({
-    query: USER_MINTS_BUNRS_PER_PAIR,
-    variables: {
-      user,
-      pair: pairAddress,
-    },
-  })
-  for (const index in results.data.mints) {
-    const mint = results.data.mints[index]
-    const mintToken0 = mint.pair.token0.id
-    const mintToken1 = mint.pair.token1.id
+  // let usd = 0
+  // let amount0 = 0
+  // let amount1 = 0
+  // // get all minst and burns to get principal amounts
+  // const results = await client.query({
+  //   query: USER_MINTS_BUNRS_PER_PAIR,
+  //   variables: {
+  //     user,
+  //     pair: pairAddress,
+  //   },
+  // })
+  // for (const index in results.data.mints) {
+  //   const mint = results.data.mints[index]
+  //   const mintToken0 = mint.pair.token0.id
+  //   const mintToken1 = mint.pair.token1.id
 
-    // if trackign before prices were discovered (pre-launch days), hardcode stablecoins
-    if (priceOverrides.includes(mintToken0) && mint.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
-      usd += parseFloat(mint.amount0) * 2
-    } else if (priceOverrides.includes(mintToken1) && mint.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
-      usd += parseFloat(mint.amount1) * 2
-    } else {
-      usd += parseFloat(mint.amountUSD)
-    }
-    amount0 += parseFloat(mint.amount0)
-    amount1 += parseFloat(mint.amount1)
-  }
+  //   // if trackign before prices were discovered (pre-launch days), hardcode stablecoins
+  //   if (priceOverrides.includes(mintToken0) && mint.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
+  //     usd += parseFloat(mint.amount0) * 2
+  //   } else if (priceOverrides.includes(mintToken1) && mint.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
+  //     usd += parseFloat(mint.amount1) * 2
+  //   } else {
+  //     usd += parseFloat(mint.amountUSD)
+  //   }
+  //   amount0 += parseFloat(mint.amount0)
+  //   amount1 += parseFloat(mint.amount1)
+  // }
 
-  for (const index in results.data.burns) {
-    const burn = results.data.burns[index]
-    const burnToken0 = burn.pair.token0.id
-    const burnToken1 = burn.pair.token1.id
+  // for (const index in results.data.burns) {
+  //   const burn = results.data.burns[index]
+  //   const burnToken0 = burn.pair.token0.id
+  //   const burnToken1 = burn.pair.token1.id
 
-    // if trackign before prices were discovered (pre-launch days), hardcode stablecoins
-    if (priceOverrides.includes(burnToken0) && burn.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
-      usd += parseFloat(burn.amount0) * 2
-    } else if (priceOverrides.includes(burnToken1) && burn.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
-      usd += parseFloat(burn.amount1) * 2
-    } else {
-      usd -= parseFloat(burn.amountUSD)
-    }
+  //   // if trackign before prices were discovered (pre-launch days), hardcode stablecoins
+  //   if (priceOverrides.includes(burnToken0) && burn.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
+  //     usd += parseFloat(burn.amount0) * 2
+  //   } else if (priceOverrides.includes(burnToken1) && burn.timestamp < PRICE_DISCOVERY_START_TIMESTAMP) {
+  //     usd += parseFloat(burn.amount1) * 2
+  //   } else {
+  //     usd -= parseFloat(burn.amountUSD)
+  //   }
 
-    amount0 -= parseFloat(burn.amount0)
-    amount1 -= parseFloat(burn.amount1)
-  }
+  //   amount0 -= parseFloat(burn.amount0)
+  //   amount1 -= parseFloat(burn.amount1)
+  // }
 
-  return { usd, amount0, amount1 }
+  // return { usd, amount0, amount1 }
 }
 
 /**

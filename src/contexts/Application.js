@@ -3,7 +3,7 @@ import { timeframeOptions, SUPPORTED_LIST_URLS__NO_ENS } from '../constants'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import getTokenList from '../utils/tokenLists'
-import { healthClient } from '../apollo/client'
+import { testClient } from '../apollo/client'
 import { SUBGRAPH_HEALTH } from '../apollo/queries'
 dayjs.extend(utc)
 
@@ -167,35 +167,35 @@ export default function Provider({ children }) {
 }
 
 export function useLatestBlocks() {
-  const [state, { updateLatestBlock, updateHeadBlock }] = useApplicationContext()
+  // const [state, { updateLatestBlock, updateHeadBlock }] = useApplicationContext()
 
-  const latestBlock = state?.[LATEST_BLOCK]
-  const headBlock = state?.[HEAD_BLOCK]
+  // const latestBlock = state?.[LATEST_BLOCK]
+  // const headBlock = state?.[HEAD_BLOCK]
 
-  useEffect(() => {
-    async function fetch() {
-      healthClient
-        .query({
-          query: SUBGRAPH_HEALTH,
-        })
-        .then((res) => {
-          const syncedBlock = res.data.indexingStatusForCurrentVersion.chains[0].latestBlock.number
-          const headBlock = res.data.indexingStatusForCurrentVersion.chains[0].chainHeadBlock.number
-          if (syncedBlock && headBlock) {
-            updateLatestBlock(syncedBlock)
-            updateHeadBlock(headBlock)
-          }
-        })
-        .catch((e) => {
-          console.log(e)
-        })
-    }
-    if (!latestBlock) {
-      fetch()
-    }
-  }, [latestBlock, updateHeadBlock, updateLatestBlock])
+  // useEffect(() => {
+  //   async function fetch() {
+  //     healthClient
+  //       .query({
+  //         query: SUBGRAPH_HEALTH,
+  //       })
+  //       .then((res) => {
+  //         const syncedBlock = res.data.indexingStatusForCurrentVersion.chains[0].latestBlock.number
+  //         const headBlock = res.data.indexingStatusForCurrentVersion.chains[0].chainHeadBlock.number
+  //         if (syncedBlock && headBlock) {
+  //           updateLatestBlock(syncedBlock)
+  //           updateHeadBlock(headBlock)
+  //         }
+  //       })
+  //       .catch((e) => {
+  //         console.log(e)
+  //       })
+  //   }
+  //   if (!latestBlock) {
+  //     fetch()
+  //   }
+  // }, [latestBlock, updateHeadBlock, updateLatestBlock])
 
-  return [latestBlock, headBlock]
+ // return [latestBlock, headBlock]
 }
 
 export function useCurrentCurrency() {
@@ -269,15 +269,15 @@ export function useListedTokens() {
 
   useEffect(() => {
     async function fetchList() {
-      const allFetched = await SUPPORTED_LIST_URLS__NO_ENS.reduce(async (fetchedTokens, url) => {
-        const tokensSoFar = await fetchedTokens
-        const newTokens = await getTokenList(url)
-        if (newTokens?.tokens) {
-          return Promise.resolve([...tokensSoFar, ...newTokens.tokens])
-        }
-      }, Promise.resolve([]))
-      let formatted = allFetched?.map((t) => t.address.toLowerCase())
-      updateSupportedTokens(formatted)
+      // const allFetched = await SUPPORTED_LIST_URLS__NO_ENS.reduce(async (fetchedTokens, url) => {
+      //   const tokensSoFar = await fetchedTokens
+      //   const newTokens = await getTokenList(url)
+      //   if (newTokens?.tokens) {
+      //     return Promise.resolve([...tokensSoFar, ...newTokens.tokens])
+      //   }
+      // }, Promise.resolve([]))
+      // let formatted = allFetched?.map((t) => t.address.toLowerCase())
+      updateSupportedTokens([])
     }
     if (!supportedTokens) {
       try {

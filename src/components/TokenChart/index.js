@@ -30,8 +30,6 @@ const PriceOption = styled(OptionButton)`
 `
 
 const CHART_VIEW = {
-  VOLUME: 'Volume',
-  LIQUIDITY: 'Liquidity',
   PRICE: 'Price',
   LINE_PRICE: 'Price (Line)',
 }
@@ -148,20 +146,6 @@ const TokenChart = ({ address, color, base }) => {
         >
           <AutoColumn gap="8px">
             <RowFixed>
-              <OptionButton
-                active={chartFilter === CHART_VIEW.LIQUIDITY}
-                onClick={() => setChartFilter(CHART_VIEW.LIQUIDITY)}
-                style={{ marginRight: '6px' }}
-              >
-                Liquidity
-              </OptionButton>
-              <OptionButton
-                active={chartFilter === CHART_VIEW.VOLUME}
-                onClick={() => setChartFilter(CHART_VIEW.VOLUME)}
-                style={{ marginRight: '6px' }}
-              >
-                Volume
-              </OptionButton>
               <OptionButton
                 active={chartFilter === CHART_VIEW.PRICE}
                 onClick={() => {
