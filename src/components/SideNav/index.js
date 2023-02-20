@@ -7,7 +7,7 @@ import { useMedia } from 'react-use'
 import { transparentize } from 'polished'
 import { TYPE } from '../../Theme'
 import { withRouter } from 'react-router-dom'
-import { TrendingUp, PieChart, Disc } from 'react-feather'
+import { TrendingUp, PieChart, Disc, BarChart2, Target } from 'react-feather'
 import { useSessionStart } from '../../contexts/Application'
 import { useDarkModeManager } from '../../contexts/LocalStorage'
 
@@ -142,6 +142,30 @@ function SideNav({ history }) {
                   >
                     <PieChart size={20} style={{ marginRight: '.75rem' }} />
                     Pairs
+                  </Option>
+                </BasicLink>
+                <BasicLink to="/">
+                  <Option style={{opacity: 0.2}}
+                    activeText={
+                      (history.location.pathname.split('/')[1] === 'pairs' ||
+                        history.location.pathname.split('/')[1] === 'pair') ??
+                      undefined
+                    }
+                  >
+                    <BarChart2 size={20} style={{ marginRight: '.75rem' }} />
+                    Fees
+                  </Option>
+                </BasicLink>
+                <BasicLink to="/">
+                  <Option  style={{opacity: 0.2}}
+                    activeText={
+                      (history.location.pathname.split('/')[1] === 'pairs' ||
+                        history.location.pathname.split('/')[1] === 'pair') ??
+                      undefined
+                    }
+                  >
+                    <Target size={20} style={{ marginRight: '.75rem' }} />
+                    Burns
                   </Option>
                 </BasicLink>
               </AutoColumn>
