@@ -428,7 +428,6 @@ const getChartData = async (oldestDateToFetch, offsetData, allPairsData) => {
         liquidityByPair.forEach((liquid, i) => {
           dayLiquidity += liquid;
         });
-
         dataFinal = {
           id: counter,
           date: utcCurrentTime,
@@ -445,8 +444,10 @@ const getChartData = async (oldestDateToFetch, offsetData, allPairsData) => {
         counter += 1;
         liquidityByPair.clear();
       }
-      if (dayData.liquidityUSD > 0)
+
+      if (dayData.liquidityUSD > 0){
         liquidityByPair.set(dayData.pairAddress, dayData.liquidityUSD);
+      }
       volumePerDay += dayData.volume0USD;
     });
     //Push last day
@@ -454,6 +455,7 @@ const getChartData = async (oldestDateToFetch, offsetData, allPairsData) => {
     liquidityByPair.forEach((liquid, i) => {
       dayLiquidity += liquid;
     });
+
     dataFinal = {
       id: counter,
       date: currentTime,
@@ -532,13 +534,15 @@ const getGlobalTransactions = async (allPairsData) => {
       query: GLOBAL_TXNS_BASED,
       fetchPolicy: "cache-first",
       variables: {
-        limit: 100,
+        limit: 200,
         skip: 0
       }
     });
     transactions.mints = [];
     transactions.burns = [];
     transactions.swaps = [];
+
+    let lastTransactionHash = '';
 
     result?.data?.transactionMany &&
     result.data.transactionMany.map((transaction) => {
@@ -559,19 +563,26 @@ const getGlobalTransactions = async (allPairsData) => {
         if(transaction.transactionHash == '0x7f0d58b6f67ed2cd0dfcda4c4bf8f32d9055b15b2d4ed817fa7a2f01e1d5ee33') {
           let stop = 1
         }
-        let tx = {
-          token0Symbol: pair.token0Info.symbol,
-          token1Symbol: pair.token1Info.symbol,
-          amount0In: amount0In,
-          amount0Out: amount0Out,
-          amount1In: amount1In,
-          amount1Out: amount1Out,
-          hash: transaction.transactionHash,
-          timeStamp: transaction.timeStamp,
-          amountUSD: transaction.amountUSD,
-          to: transaction.to
-        };
-        transactions.swaps.push(tx);
+        if( lastTransactionHash != transaction.transactionHash )
+        {
+          let tx = {
+            token0Symbol: pair.token0Info.symbol,
+            token1Symbol: pair.token1Info.symbol,
+            amount0In: amount0In,
+            amount0Out: amount0Out,
+            amount1In: amount1In,
+            amount1Out: amount1Out,
+            hash: transaction.transactionHash,
+            timeStamp: transaction.timeStamp,
+            amountUSD: transaction.amountUSD,
+            to: transaction.to
+          };
+          transactions.swaps.push(tx);
+
+        }
+
+        lastTransactionHash = transaction.transactionHash;
+
       }
       return true;
     });
