@@ -442,7 +442,7 @@ const getChartData = async (oldestDateToFetch, offsetData, allPairsData) => {
         volumePerDay = 0;
         totalLiquidity = 0;
         counter += 1;
-        liquidityByPair.clear();
+        // liquidityByPair.clear();
       }
 
       if (dayData.liquidityUSD > 0){
@@ -578,11 +578,8 @@ const getGlobalTransactions = async (allPairsData) => {
             to: transaction.to
           };
           transactions.swaps.push(tx);
-
         }
-
         lastTransactionHash = transaction.transactionHash;
-
       }
       return true;
     });
