@@ -54,7 +54,7 @@ const TradingViewChart = ({
   // parese the data and format for tardingview consumption
   const formattedData = data?.map((entry) => {
     return {
-      time: dayjs.unix(entry.date).utc().format('YYYY-MM-DD'),
+      time: entry.date ? dayjs.unix(entry.date).utc().format('YYYY-MM-DD') : "2022-11-29",
       value: parseFloat(entry[field]),
     }
   })
@@ -146,7 +146,6 @@ const TradingViewChart = ({
               lineColor: 'rgba(189, 151, 132,0.74)',
               lineWidth: 3,
             })
-
       series.setData(formattedData)
       var toolTip = document.createElement('div')
       toolTip.setAttribute('id', 'tooltip-id' + type)
